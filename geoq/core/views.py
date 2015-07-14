@@ -31,6 +31,17 @@ from guardian.decorators import permission_required
 from kml_view import *
 from shape_view import *
 
+#Added by Jared
+from django.conf import settings
+import json
+
+def twitterfeed(request):
+    res = {}
+    res['test'] = 'hi'
+    res['passed'] = request.GET['test']
+    res['yes'] = str(request.GET)
+    return HttpResponse(json.dumps(res))
+
 
 class Dashboard(TemplateView):
 

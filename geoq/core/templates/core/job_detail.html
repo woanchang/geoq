@@ -160,7 +160,28 @@
         var height = $att.height();
         $map.height(height);
         $att.css('marginBottom','20px');
-    });
+
+        console.log("{% url 'twitterfeed'%}");
+
+        //Added by Jared
+        $("#twitter-feed").click( function() {
+            jQuery.ajax({
+                type: "GET",
+                url: "{% url 'twitterfeed'%}",
+                data: {"test" : "ing"},
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function(res) {
+                    console.log(res);
+                },
+                error: function(e, msg) {
+                    console.log(e.status + " - " + e.statusText + " [" + msg + "]");
+                    console.log(e);
+                }
+            }); //ajax
+            console.log("end");
+        }); //click
+    }); //ready
 
     </script>
     <style>
