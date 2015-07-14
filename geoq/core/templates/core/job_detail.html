@@ -165,21 +165,29 @@
 
         //Added by Jared
         $("#twitter-feed").click( function() {
-            jQuery.ajax({
-                type: "GET",
-                url: "{% url 'twitterfeed'%}",
-                data: {"test" : "ing"},
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                success: function(res) {
-                    console.log(res);
-                },
-                error: function(e, msg) {
-                    console.log(e.status + " - " + e.statusText + " [" + msg + "]");
-                    console.log(e);
-                }
-            }); //ajax
-            console.log("end");
+            var query_bounds;
+            if (map_object && map_object.getBounds().isValid()) {
+                query_bounds = map_object.getBounds().toBBoxString();
+
+                jQuery.ajax({
+                    type: "GET",
+                    url: "{% url 'twitterfeed'%}",
+                    data: {"bounds" : query_bounds},
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function(res) {
+                        console.log(res);
+                    },
+                    error: function(e, msg) {
+                        console.log(e.status + " - " + e.statusText + " [" + msg + "]");
+                        console.log(e);
+                    }
+                }); //ajax
+
+            } else {
+                console.log("Invalid map or bounds!");
+            }
+
         }); //click
     }); //ready
 

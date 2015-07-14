@@ -32,14 +32,84 @@ from kml_view import *
 from shape_view import *
 
 #Added by Jared
-from django.conf import settings
 import json
+import time
+import os
+from django.core.cache import cache
+import multiprocessing
+from django.conf import settings
+#from tweepy.streaming import StreamListener
+#from tweepy import OAuthHandler
+#from tweepy import Stream
+
+# class GeoTweetStream(StreamListener):
+#
+#     access_token = "3248261306-H77EHvXe48pbWdmzUawfoRhgGxQDm2VKFlnfacW"
+#     access_token_secret = "vTrQ1DrMzAfe2GXeNycVc6oagaz3JDGW5EweinnZytZhZ"
+#     consumer_key = "ZuPoSR6v2UW9RRUM3jVNy4lXQ"
+#     consumer_secret = "dMDpqXNxbcCwmTJQSAYCJkFfStpotj8ZDcka1CWbUmwdTzieK6"
+#
+#
+#     def on_data(self, data):
+#         print data
+#         #return True
+#
+#     def on_error(self, status):
+#         print status
+#
+# def streamFromTwitter(geoCode):
+#     #This handles Twitter authetification and the connection to Twitter Streaming API
+#     l = GeoTweetStream()
+#     auth = OAuthHandler(GeoTweetStream.consumer_key, GeoTweetStream.consumer_secret)
+#     auth.set_access_token(GeoTweetStream.access_token, GeoTweetStream.access_token_secret)
+#     stream = Stream(auth, l)
+#
+#     stream.filter(locations=[geoCode])
+
+def streamFromTwitter(geoCode):
+    result = []
+    while True:
+        result.append(geoCode)
+        time.sleep(4)
+        result.append(geoCode)
+    return result
 
 def twitterfeed(request):
+    # Doesn't override is exists - Default
+    cache.add('streaming', False)
+
     res = {}
-    res['test'] = 'hi'
-    res['passed'] = request.GET['test']
-    res['yes'] = str(request.GET)
+    #res['bounds'] = request.GET['bounds']
+
+    daemon_pid = cache.get('stream-daemon-pid')
+    if (daemon_pid):
+        res['failed'] = 'no cache!'
+        return HttpResponse(json.dumps(res))
+
+    streaming = cache.get('streaming')
+    if streaming is False:
+        # if false, start streaming
+        d = multiprocessing.Process(name='twitter_stream', target=streamFromTwitter,
+                                args=(2,))
+        # Prevents blocking of this method
+        d.daemon = True
+
+        d.start()
+        res['daemon'] = d.pid
+        res['streaming'] = d.is_alive()
+
+        # cache the process
+        cache.set('stream-daemon-pid', d.pid)
+        res['streaming'] = True
+
+    else:
+        # if streaming, stop
+        # 9 = SIGKILL
+        os.kill(daemon_pid, 9)
+
+        cache.set('streaming', not streaming)
+        res['streaming'] = False
+
     return HttpResponse(json.dumps(res))
 
 
