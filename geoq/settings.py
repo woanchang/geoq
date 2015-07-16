@@ -238,6 +238,7 @@ INSTALLED_APPS = (
     'debug_toolbar',
 
     'geoq.mgrs',
+    'geoq.twitterstream'
 
 )
 
@@ -291,6 +292,12 @@ BOOTSTRAP_JS_BASE_URL = BOOTSTRAP_BASE_URL + 'js/'
 BOOTSTRAP_JS_URL =  BOOTSTRAP_JS_BASE_URL + 'bootstrap.min.js'
 BOOTSTRAP_CSS_BASE_URL = BOOTSTRAP_BASE_URL + 'css/'
 BOOTSTRAP_CSS_URL = BOOTSTRAP_CSS_BASE_URL + 'bootstrap.css'
+
+# Celery Settings
+BROKER_URL = 'redis:localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
 # Override production settings with local settings if they exist
 try:
