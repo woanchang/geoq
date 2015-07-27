@@ -33,38 +33,14 @@ from shape_view import *
 
 #Added by Jared
 import json
-from geoq.celery import app
-
-# class GeoTweetStream(StreamListener):
-#
-#     access_token = "3248261306-H77EHvXe48pbWdmzUawfoRhgGxQDm2VKFlnfacW"
-#     access_token_secret = "vTrQ1DrMzAfe2GXeNycVc6oagaz3JDGW5EweinnZytZhZ"
-#     consumer_key = "ZuPoSR6v2UW9RRUM3jVNy4lXQ"
-#     consumer_secret = "dMDpqXNxbcCwmTJQSAYCJkFfStpotj8ZDcka1CWbUmwdTzieK6"
-#
-#
-#     def on_data(self, data):
-#         print data
-#         #return True
-#
-#     def on_error(self, status):
-#         print status
-#
-# def streamFromTwitter(geoCode):
-#     #This handles Twitter authetification and the connection to Twitter Streaming API
-#     l = GeoTweetStream()
-#     auth = OAuthHandler(GeoTweetStream.consumer_key, GeoTweetStream.consumer_secret)
-#     auth.set_access_token(GeoTweetStream.access_token, GeoTweetStream.access_token_secret)
-#     stream = Stream(auth, l)
-#
-#     stream.filter(locations=[geoCode])
+from geoq.twitterstream.tasks import testTask
 
 def twitterfeed(request):
 
     res = {}
     res['response'] = 'Hello Geoq!'
 
-    res['task-response'] = app.testTask(request.GET['bounds'])
+    res['task-response'] = testTask(request.GET['bounds'])
 
     return HttpResponse(json.dumps(res))
 
