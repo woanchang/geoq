@@ -2,6 +2,7 @@ from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
 from celery import shared_task
+import json
 
 access_token = "3248261306-H77EHvXe48pbWdmzUawfoRhgGxQDm2VKFlnfacW"
 access_token_secret = "vTrQ1DrMzAfe2GXeNycVc6oagaz3JDGW5EweinnZytZhZ"
@@ -10,10 +11,21 @@ consumer_secret = "dMDpqXNxbcCwmTJQSAYCJkFfStpotj8ZDcka1CWbUmwdTzieK6"
 
 #This is a basic listener that just prints received tweets to file.
 class TwitterStream(StreamListener):
+    STREAM_FILE = 'geoq/twitterstream/stream.json'
 
     def on_data(self, data):
-        f1 = open('../..stream.json', 'w+')
-        f1.write(data)
+
+        tweets = []
+
+        with open(self.STREAM_FILE, mode='r') as feed:
+           tweets = json.load(feed)
+        with open(self.STREAM_FILE, mode='w') as feed:
+            tweets.append(data)
+            json.dump(tweets, feed)
+
+        #f1 = open(, 'w+')
+        #f1.write(data)
+        print data
         #return True
 
     def on_error(self, status):
@@ -28,7 +40,7 @@ def openStream(geoCode):
     auth.set_access_token(access_token, access_token_secret)
     stream = Stream(auth, l)
 
-    stream.filter(locations=[geoCode])
+    stream.filter(locations=geoCode)
 
 @shared_task
 def testTask(geoCode):

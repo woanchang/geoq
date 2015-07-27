@@ -33,7 +33,7 @@ from shape_view import *
 
 #Added by Jared
 import json
-from geoq.twitterstream.tasks import testTask
+from geoq.twitterstream.tasks import testTask, openStream
 
 def twitterfeed(request):
 
@@ -41,6 +41,24 @@ def twitterfeed(request):
     res['response'] = 'Hello Geoq!'
 
     res['task-response'] = testTask(request.GET['bounds'])
+
+    mapBounds = eval('[' + request.GET['bounds'] + ']')
+
+    res['new-bounds'] = mapBounds
+    openStream(mapBounds)
+
+    return HttpResponse(json.dumps(res))
+
+def gettweets(request):
+
+    res = {}
+    res['response'] = 'Incoming Tweets'
+
+    with open('geoq/twitterstream/stream.json', "r+") as f:
+        res['tweets'] = f.read()
+        f.seek(0)
+        f.write('[]')
+        f.truncate()
 
     return HttpResponse(json.dumps(res))
 

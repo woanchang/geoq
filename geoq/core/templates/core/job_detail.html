@@ -169,6 +169,8 @@
             if (map_object && map_object.getBounds().isValid()) {
                 query_bounds = map_object.getBounds().toBBoxString();
 
+                setTimeout( iJustWannaTweet, 5000 );
+
                 jQuery.ajax({
                     type: "GET",
                     url: "{% url 'twitterfeed'%}",
@@ -190,6 +192,26 @@
 
         }); //click
     }); //ready
+
+    function iJustWannaTweet() {
+        var queryId = setInterval( function() {
+            console.log("query twitterfeed...");
+
+            jQuery.ajax({
+                    type: "GET",
+                    url: "{% url 'gettweets'%}",
+                    dataType: "json",
+                    success: function(res) {
+                        console.log(res);
+                    },
+                    error: function(e, msg) {
+                        console.log(e.status + " - " + e.statusText + " [" + msg + "]");
+                        console.log(e);
+                    }
+                }); //ajax
+
+        }, 4000 );
+    }
 
     </script>
     <style>
