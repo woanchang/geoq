@@ -164,17 +164,27 @@
         console.log("{% url 'twitterfeed'%}");
 
         //Added by Jared
+        var stream_open = false;
+        var intervalId;
         $("#twitter-feed").click( function() {
             var query_bounds;
             if (map_object && map_object.getBounds().isValid()) {
                 query_bounds = map_object.getBounds().toBBoxString();
 
-                setTimeout( iJustWannaTweet, 5000 );
+                if (stream_open) {
+                    closeStream();
+                }
+                else {
+                    console.log("Opening stream...");
+                    setTimeout( function() {
+                        intervalId = iJustWannaTweet();
+                    }, 5000 );
+                }
 
                 jQuery.ajax({
                     type: "GET",
                     url: "{% url 'twitterfeed'%}",
-                    data: {"bounds" : query_bounds},
+                    data: {"bounds" : query_bounds, "stream_open" : stream_open},
                     contentType: "application/json; charset=utf-8",
                     dataType: "json",
                     success: function(res) {
@@ -186,32 +196,60 @@
                     }
                 }); //ajax
 
+                stream_open = !stream_open;
+
             } else {
                 console.log("Invalid map or bounds!");
             }
 
         }); //click
+
+        function closeStream() {
+            console.log("Closing stream...");
+            clearInterval(intervalId);
+            var toggleBtn = $("#twitter-feed");
+            toggleBtn.prop("disabled", true);
+            setTimeout( function() {
+                toggleBtn.prop("disabled", false);
+                console.log("Ready for streaming");
+            }, 5 * 1000);
+            console.log("Stream Closed");
+        }
+
+        function iJustWannaTweet() {
+            var queryId = setInterval( function() {
+                console.log("query twitterfeed...");
+
+                jQuery.ajax({
+                        type: "GET",
+                        url: "{% url 'gettweets'%}",
+                        dataType: "json",
+                        success: function(res) {
+                            if (res.stream_open != undefined) {
+                                stream_open = res.stream_open;
+                            }
+                            if (res.tweets != undefined) {
+                                res.tweets = JSON.parse(res.tweets);
+                            }
+                            console.log(res);
+
+                            // close polling if stream closed
+                            if (!stream_open) {
+                                closeStream();
+                            }
+                        },
+                        error: function(e, msg) {
+                            console.log(e.status + " - " + e.statusText + " [" + msg + "]");
+                            console.log(e);
+                        }
+                    }); //ajax
+            }, 1000 * 15 ); //setInterval
+
+            return queryId;
+        }
+
     }); //ready
 
-    function iJustWannaTweet() {
-        var queryId = setInterval( function() {
-            console.log("query twitterfeed...");
-
-            jQuery.ajax({
-                    type: "GET",
-                    url: "{% url 'gettweets'%}",
-                    dataType: "json",
-                    success: function(res) {
-                        console.log(res);
-                    },
-                    error: function(e, msg) {
-                        console.log(e.status + " - " + e.statusText + " [" + msg + "]");
-                        console.log(e);
-                    }
-                }); //ajax
-
-        }, 4000 );
-    }
 
     </script>
     <style>
