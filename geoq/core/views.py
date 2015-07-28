@@ -45,22 +45,19 @@ def twitterfeed(request):
 
     # If a stream is currently open
     if cache.get('twitter_stream_active'):
-        cache.set('twitter_close_stream', True)
+        cache.set('twitter_close_stream', True, None)
         res['response'] = 'Closing stream...'
         res['stream_open'] = False
         return HttpResponse(json.dumps(res))
 
     # If a stream isn't currently open
-    cache.set('twitter_stream_active', True)
-    cache.set('twitter_close_stream', False)
+    cache.set('twitter_stream_active', True, None)
+    cache.set('twitter_close_stream', False, None)
 
-    res['response'] = 'Hello Geoq!'
-    res['task-response'] = testTask(request.GET['bounds'])
+    res['response'] = 'Currently streaming!'
+    res['stream_open'] = cache.get('twitter_stream_active')
 
     mapBounds = eval('[' + request.GET['bounds'] + ']')
-
-    res['new-bounds'] = mapBounds
-    res['stream_open'] = cache.get('twitter_stream_active')
     openStream(mapBounds)
 
     return HttpResponse(json.dumps(res))
@@ -68,7 +65,6 @@ def twitterfeed(request):
 def gettweets(request):
 
     res = {}
-    res['response'] = 'Incoming Tweets'
     res['stream_open'] = cache.get('twitter_stream_active')
 
     with open('geoq/twitterstream/stream.json', "r+") as f:

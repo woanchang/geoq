@@ -191,6 +191,7 @@
                         console.log(res);
                     },
                     error: function(e, msg) {
+                        closeStream();
                         console.log(e.status + " - " + e.statusText + " [" + msg + "]");
                         console.log(e);
                     }
@@ -239,6 +240,7 @@
                             }
                         },
                         error: function(e, msg) {
+                            closeStream();
                             console.log(e.status + " - " + e.statusText + " [" + msg + "]");
                             console.log(e);
                         }

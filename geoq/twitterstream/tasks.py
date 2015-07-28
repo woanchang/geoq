@@ -14,32 +14,36 @@ consumer_secret = "dMDpqXNxbcCwmTJQSAYCJkFfStpotj8ZDcka1CWbUmwdTzieK6"
 class TwitterStream(StreamListener):
     STREAM_FILE = 'geoq/twitterstream/stream.json'
 
-    def on_data(self, data):
+    @staticmethod
+    def close_stream():
+        print 'Closing stream....'
+        cache.set('twitter_stream_active', False)
+        return False
+
+    def on_data(self, raw_data):
         """ Overwritten method which handles when tweets come in from Twitter """
 
         tweets = []
+        json_data = json.loads(raw_data)
 
         with open(self.STREAM_FILE, mode='r') as feed:
             tweets = json.load(feed)
         with open(self.STREAM_FILE, mode='w') as feed:
-            tweets.append(data)
+            tweets.append(json_data)
             json.dump(tweets, feed)
 
-        print data
+        print raw_data
 
-        # add only sets key/value pair if key doesn't exist already
-        cache.add('twitter_close_stream', False)
-
-        # Check if stream should close
-        if cache.get('twitter_close_stream'):
-            print 'Closing stream....'
-            cache.set('twitter_stream_active', False)
-            return False
+        # Check if stream should close, defaults to True
+        # defaulting to True causes stream to terminate when cache expires
+        if cache.get('twitter_close_stream', True):
+            return self.close_stream()
 
     def on_error(self, status):
         """ Overwritten method which handles when errors when connecting to Twitter """
 
         print status
+        return self.close_stream()
 
     def on_disconnect(self, notice):
         """ Overwritten method which handles when stream connection is terminated
@@ -48,6 +52,8 @@ class TwitterStream(StreamListener):
         # returns stream.json into empty array
         with open(self.STREAM_FILE, mode='w') as f:
             f.write('[]')
+
+        return self.close_stream()
 
 
 @shared_task
