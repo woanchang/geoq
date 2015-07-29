@@ -33,29 +33,27 @@ from shape_view import *
 
 #Added by Jared
 import json
-from geoq.twitterstream.tasks import testTask, openStream
+from geoq.twitterstream.tasks import testTask, openStream, twitter_close_key, twitter_active_key
 from django.core.cache import cache
 
 def twitterfeed(request):
 
     res = {}
-
-    # add only sets key/value pair if key doesn't exist already
-    cache.add('twitter_stream_active', False)
+    cache.add(twitter_active_key, False)
 
     # If a stream is currently open
-    if cache.get('twitter_stream_active'):
-        cache.set('twitter_close_stream', True, None)
-        res['response'] = 'Closing stream...'
-        res['stream_open'] = False
-        return HttpResponse(json.dumps(res))
+    if cache.get(twitter_active_key, False):
+        cache.set(twitter_close_key, True)
+        print 'Client stopped stream'
+        print 'Close stream: ' + str(cache.get(twitter_close_key))
+        return gettweets(request)
 
     # If a stream isn't currently open
-    cache.set('twitter_stream_active', True, None)
-    cache.set('twitter_close_stream', False, None)
+    cache.set(twitter_active_key, True)
+    cache.set(twitter_close_key, False)
 
     res['response'] = 'Currently streaming!'
-    res['stream_open'] = cache.get('twitter_stream_active')
+    res['server_stream'] = True
 
     mapBounds = eval('[' + request.GET['bounds'] + ']')
     openStream(mapBounds)
@@ -65,7 +63,7 @@ def twitterfeed(request):
 def gettweets(request):
 
     res = {}
-    res['stream_open'] = cache.get('twitter_stream_active')
+    res['server_stream'] = cache.get(twitter_active_key, False)
 
     with open('geoq/twitterstream/stream.json', "r+") as f:
         res['tweets'] = f.read()
