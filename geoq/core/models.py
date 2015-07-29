@@ -297,7 +297,9 @@ class Job(GeoQBase, Assignment):
         return clean_dumps(geojson) if as_json else geojson
 
     def features_geoJSON(self, as_json=True, using_style_template=True):
-
+        '''
+            Gather all features and return
+        '''
         geojson = SortedDict()
         geojson["type"] = "FeatureCollection"
         geojson["properties"] = dict(id=self.id)
