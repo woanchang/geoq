@@ -33,7 +33,7 @@ from shape_view import *
 
 #Added by Jared
 import json
-from geoq.twitterstream.tasks import testTask, openStream, twitter_close_key, twitter_active_key
+from geoq.twitterstream.tasks import clearJson, openStream, twitter_close_key, twitter_active_key
 from django.core.cache import cache
 
 def twitterfeed(request):
@@ -47,6 +47,9 @@ def twitterfeed(request):
         print 'Client stopped stream'
         print 'Close stream: ' + str(cache.get(twitter_close_key))
         return gettweets(request)
+
+    # returns stream.json into empty array
+    clearJson()
 
     # If a stream isn't currently open
     cache.set(twitter_active_key, True)

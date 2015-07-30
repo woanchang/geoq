@@ -29,9 +29,13 @@ class TwitterStream(StreamListener):
 
         tweets = []
         json_data = json.loads(raw_data)
+        cache.set(twitter_active_key, True)
 
         with open(self.STREAM_FILE, mode='r') as feed:
             tweets = json.load(feed)
+            # close stream if the file is getting too large
+            if len(tweets) > 59:
+                cache.set(twitter_close_key, True)
         with open(self.STREAM_FILE, mode='w') as feed:
             tweets.append(json_data)
             json.dump(tweets, feed)
@@ -53,6 +57,14 @@ class TwitterStream(StreamListener):
 
         self.close_stream()
 
+    def on_disconnect(self, notice):
+        print "Disconnecting from Twitter Streaming API..."
+        # returns stream.json into empty array
+        with open(self.STREAM_FILE, mode='w') as f:
+            f.write('[]')
+
+        self.close_stream()
+
 
 @shared_task
 def openStream(geoCode):
@@ -67,3 +79,9 @@ def openStream(geoCode):
 @shared_task
 def testTask(geoCode):
     return geoCode
+
+@shared_task
+def clearJson():
+    # guarantees empty json when stream starts
+    with open(TwitterStream.STREAM_FILE, mode='w') as f:
+            f.write('[]')

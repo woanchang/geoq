@@ -124,7 +124,7 @@
         twitterStream.tweets = [];
         twitterStream.tweetFeatures = [];
         twitterStream.tweetIndex = 0;
-        //twitterStream.geoJson = L.geoJson().addTo(aoi_feature_edit.map);
+        twitterStream.tweetLayer = undefined;
 
         twitterStream.toggleStream = function(_button) {
             console.log("toggling stream...");
@@ -222,7 +222,7 @@
                     if (res.tweets != undefined && res.tweets != null) {
                         res.tweets = JSON.parse(res.tweets);
 
-                        if ( res.tweets instanceof Array ) {
+                        if ( res.tweets instanceof Array && res.tweets.length > 0) {
                             twitterStream.tweets.push(res.tweets);
                             twitterStream.addTweetLayer();
                         }
@@ -244,6 +244,17 @@
             var features = [];
 
             for (var t of twitterStream.tweets[twitterStream.tweetIndex]) {
+                var popupContent = '<div><h5>@' + t.user.screen_name + ' (' + t.user.name + ')</h5>' +
+                                 '<p>' + t.text + '</p><p>' + t.created_at + '</p>';
+
+                if (t.entities.media != undefined && t.entities.media.media_url != undefined &&
+                    t.entities.media.type === "photo" ) {
+                        var image = '<img src="+t.entities.media.media_url+"/>';
+                        popupContent = popupContent + '<p>' + image + '</p>';
+                    }
+
+                popupContent = popupContent + '</div>';
+
                 var feature_json = {
                     type: "Feature",
                     properties: {
@@ -256,7 +267,8 @@
                         screen_name: t.user.screen_name,
                         twitter_verified: t.user.verified,
                         tweet_id: t.id,
-                        popupContent: t.user.name + " - " + t.text
+                        timestamp: t.created_at,
+                        popupContent: popupContent
                     },
                     // Note: coordinates field is GeoJson ready, the geo field isn't
                     // Even though they share the same data (for the most part)
@@ -269,14 +281,19 @@
 
             console.log(features);
 
-            var onEachFeature = function(feature, layer) {
-                // does this feature have a property named popupContent?
-                if (feature.properties && feature.properties.popupContent) {
-                    layer.bindPopup(feature.properties.popupContent);
-                }
+            if (twitterStream.tweetLayer == undefined) {
+                twitterStream.tweetLayer = L.geoJson(false, {
+                    onEachFeature: function(feature, layer) {
+                        layer.bindPopup(feature.properties.popupContent);
+                    },
+                    filter: function(feature, layer) {
+                        return feature.properties.lang === "en";
+                    }
+                }).addTo(aoi_feature_edit.map);
             }
 
-            L.geoJson(features, onEachFeature).addTo(aoi_feature_edit.map);
+            console.log("adding data to twitter layer...");
+            twitterStream.tweetLayer.addData(features);
         }
 
     </script>
