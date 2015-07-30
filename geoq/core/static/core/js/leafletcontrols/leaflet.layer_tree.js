@@ -191,7 +191,8 @@ leaflet_layer_control.addTimescale = function($accordion) {
         '<div><h4>End Date/Time:</h4><input id="enddatetime" type="text" value="2020/12/30 23:59"></div>' + 
         '<div><h4>Current Date/Time:</h4><input id="currentdatetime" type="text"></div>' +
         '<div id="dateTimeSlider"></div>' + 
-        '<div><button onclick="leaflet_layer_control.runTimeFrame();">Submit a Comment</button></div>';
+        '<div><button onclick="leaflet_layer_control.runTimeFrame();">Run Timeflow</button>' +
+        '<button onclick="clearInterval(timeDate.intId);">End Timeflow</button></div>';
     var timeDom = $(htmlToAdd);
     timeDom.appendTo(timeScale);
     $('#startdatetime').datetimepicker();
@@ -258,30 +259,32 @@ leaflet_layer_control.addTimescale = function($accordion) {
     $('#currentdatetime').attr('value', currentdate.toString());
 }
 
+var timeDate = {};
+
 //Runs loop of calling function to change range slider time, and update map 
 leaflet_layer_control.runTimeFrame = function(){
-    var old_time = new Date($('#currentdatetime').val());
-    var end_time = new Date($('#enddatetime').val());
-    var new_time = new Date();
+    timeDate.old_time = new Date($('#currentdatetime').val());
+    timeDate.end_time = new Date($('#enddatetime').val());
+    timeDate.new_time = new Date();
     var timeout = null;
+    var dateSlider = document.getElementById('dateTimeSlider');
 
-    while(old_time < end_time){
-        old_time = new Date($('#currentdatetime').val());
-        new_time = new Date(old_time.valueOf() + (1000 * 3600 * 24));
-        //console.log("Old time: " + old_time + ", New time: " + new_time + ", End time: " + end_time);
-        //$('#currentdatetime').attr('value', new_time.toString());
-        timeout = window.setTimeout(leaflet_layer_control.changeRangeTime, 1000);
-    }
-
+    setTimeout( function() { 
+        timeDate.intId = setInterval( function() {
+            if ( timeDate.old_time > timeDate.end_time ) {
+                clearInterval(timeDate.intId);
+                return;
+            }
+            timeDate.old_time = new Date($('#currentdatetime').val());
+            timeDate.new_time = new Date(timeDate.old_time.valueOf() + (1000 * 3600 * 24));
+            //console.log("Old time: " + timeDate.old_time + ", New time: " + timeDate.new_time + ", End time: " + timeDate.end_time);
+            $('#currentdatetime').attr('value', timeDate.new_time.toString());
+            dateSlider.noUiSlider.set(timeDate.old_time);
+            leaflet_layer_control.drawEachLayer(null,map);
+        }, 500);
+    }, 1000);
 }
 
-//Runs slider through range, showing all active features in the time frame
-leaflet_layer_control.changeRangeTime = function(){
-    old_time = new Date($('#currentdatetime').val());
-    new_time = new Date(old_time.valueOf() + (1000 * 3600 * 24));
-    $('#currentdatetime').attr('value', new_time.toString());
-    console.log("Old time: " + old_time + ", New time: " + new_time + ", End time: " + end_time);
-}
 
 function timestamp(str){
     return new Date(str).getTime();   
