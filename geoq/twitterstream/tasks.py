@@ -31,6 +31,10 @@ class TwitterStream(StreamListener):
         json_data = json.loads(raw_data)
         cache.set(twitter_active_key, True)
 
+        # filters not English tweets
+        if not (('lang' in json_data) and (json_data['lang'] == 'en')):
+            return True
+
         with open(self.STREAM_FILE, mode='r') as feed:
             tweets = json.load(feed)
             # close stream if the file is getting too large
