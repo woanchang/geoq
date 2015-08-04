@@ -31,8 +31,12 @@ class TwitterStream(StreamListener):
         json_data = json.loads(raw_data)
         cache.set(twitter_active_key, True)
 
-        # filters not English tweets
+        # filters out not English tweets by short-circuiting
         if not (('lang' in json_data) and (json_data['lang'] == 'en')):
+            return True
+
+        # filters out tweets without coordinates by short-circuiting
+        if ('coordinates' in json_data) and (json_data['coordinates'] is None):
             return True
 
         with open(self.STREAM_FILE, mode='r') as feed:

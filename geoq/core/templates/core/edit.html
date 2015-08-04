@@ -133,6 +133,33 @@
         <link href="{{ STATIC_URL }}core/css/bootstrap_slider/bootstrap-slider.css" rel="stylesheet" type="text/css">
 
     {% endcompress %}
+
+    <!-- Added by Jared -->
+    <style type="text/css">
+        div.tweet-popup-header {
+            text-align: center;
+        }
+        div.tweet-popup-header img,
+        div.tweet-popup-header span {
+            display: inline-block;
+        }
+        div.tweet-popup-header img {
+            margin-right: 3px;
+            float: left;
+        }
+        div.tweet-popup-header span {
+            text-align: center;
+        }
+        div.tweet-popup-header span h5,
+        div.tweet-popup-header span h6 {
+            margin: 0;
+            padding 0;
+            margin-bottom: 3px;
+        }
+        div.tweet-popup p {
+            min-width: 301px;
+        }
+    </style>
 {% endblock %}
 
 {% block container %}

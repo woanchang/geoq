@@ -6,7 +6,7 @@ twitterStream.tweets = [];
 twitterStream.tweetFeatures = [];
 twitterStream.tweetIndex = 0;
 twitterStream.tweetLayer = undefined;
-twitterStream.en_counter = 0;
+
 
 twitterStream.toggleStream = function(_button) {
     console.log("toggling stream...");
@@ -16,6 +16,28 @@ twitterStream.toggleStream = function(_button) {
             console.log("Error with ajax urls");
             return;
         }
+
+    // Start leaflet GeoJson layer for Twitter
+    if (twitterStream.tweetLayer == undefined) {
+        twitterStream.tweetLayer = L.geoJson(false, {
+            onEachFeature: function(feature, layer) {
+                layer.bindPopup(feature.properties.popupContent);
+            },
+            filter: function(feature, layer) {
+                return (feature.properties.lang === "en") &&
+                    (feature.geometry !== null);
+            },
+            pointToLayer: function(feature, latlng) {
+                var icon = L.icon({
+                    iconSize: [32, 32],
+                    iconAnchor: [13, 27],
+                    iconUrl: 'http://png.findicons.com/files/icons/2823/turkuvaz_1/128/twitter.png'
+                });
+
+                return L.marker(latlng, {icon: icon});
+            }
+        }).addTo(aoi_feature_edit.map);
+    }
 
     // if stream is active, close it
     if ( twitterStream.stream_open ) {
@@ -127,42 +149,43 @@ twitterStream.getTweetsAjaxFunc = function() {
 }
 
 twitterStream.addTweetLayer = function() {
-    console.log("adding layer");
-
     var features = [];
 
     for (var t of twitterStream.tweets[twitterStream.tweetIndex]) {
-        if ( t.lang === "en" ) {
-            console.log("en counter: ", twitterStream.en_counter++);
-        }
 
-        var popupContent = '<div><h5>@' + t.user.screen_name + ' (' + t.user.name + ')</h5>' +
-                         '<p>' + t.text + '</p><p>' + t.created_at + '</p>';
+        var dateStr = new Date(parseInt(t.timestamp_ms));
+        var imageUrl = null;
 
-        if (t.entities.media != undefined && t.entities.media.media_url != undefined &&
+        var popupContent = '<div class="tweet-popup"><div class="tweet-popup-header">' +
+                        '<img src="' + t.user.profile_image_url_https + '"/>' +
+                        '<span><h5>@' + t.user.screen_name + '</h5><h6>(' + t.user.name + ')</h6></span></div>' +
+                        '<p>' + t.text + '</p><p>Posted today at ' + dateStr.toLocaleTimeString() + '</p>';
+
+        if (t.entities.media != undefined && t.entities.media[0].media_url != undefined &&
             t.entities.media.type === "photo" ) {
-                var image = '<img src="+t.entities.media.media_url+"/>';
+                imageUrl = t.entities.media[0].media_url;
+                var image = '<img style="width:150px;height:150px;" src="'+imageUrl+'"/>';
                 popupContent = popupContent + '<p>' + image + '</p>';
             }
-        else {
-            //console.log("entities field:", t);
-        }
 
         popupContent = popupContent + '</div>';
 
         var feature_json = {
             type: "Feature",
             properties: {
+                id: twitterStream.tweetIndex,
                 text: t.text,
                 source: 'Twitter',
-                image: t.entities,
+                image: imageUrl,
                 place: t.place,
                 lang: t.lang,
                 username: t.user.name,
                 screen_name: t.user.screen_name,
+                profile_pic_url: t.user.profile_image_url_https,
                 twitter_verified: t.user.verified,
                 tweet_id: t.id,
                 timestamp: t.created_at,
+                hashtags: t.entities.hashtags,
                 popupContent: popupContent
             },
             // Note: coordinates field is GeoJson ready, the geo field isn't
@@ -173,19 +196,6 @@ twitterStream.addTweetLayer = function() {
         features.push(feature_json);
     }
     twitterStream.tweetIndex++;
-
-    //console.log(features);
-
-    if (twitterStream.tweetLayer == undefined) {
-        twitterStream.tweetLayer = L.geoJson(false, {
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup(feature.properties.popupContent);
-            },
-            filter: function(feature, layer) {
-                return feature.properties.lang === "en";
-            }
-        }).addTo(aoi_feature_edit.map);
-    }
 
     console.log("adding data to twitter layer...");
     twitterStream.tweetLayer.addData(features);
