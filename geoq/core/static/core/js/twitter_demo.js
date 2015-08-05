@@ -6,6 +6,8 @@ twitterStream.tweets = [];
 twitterStream.tweetFeatures = [];
 twitterStream.tweetIndex = 0;
 twitterStream.tweetLayer = undefined;
+twitterStream.feature_id = 0;
+twitterStream.bad_hashtags = [];
 
 
 twitterStream.toggleStream = function(_button) {
@@ -77,7 +79,7 @@ twitterStream.toggleStreamAjaxFunc = function() {
     jQuery.ajax({
         type: "GET",
         url: twitterStream.stream_url,
-        data: {"bounds" : twitterStream.query_bounds},
+        data: {"bounds" : twitterStream.query_bounds, "client-stream" : twitterStream.stream_open},
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         success: function(res) {
@@ -122,6 +124,7 @@ twitterStream.getTweetsAjaxFunc = function() {
     jQuery.ajax({
         type: "GET",
         url: twitterStream.get_tweets_url,
+        data: {"bad_hashtags" : twitterStream.bad_hashtags},
         dataType: "json",
         success: function(res) {
             if (res.server_stream == undefined || !res.server_stream) {
@@ -156,24 +159,31 @@ twitterStream.addTweetLayer = function() {
         var dateStr = new Date(parseInt(t.timestamp_ms));
         var imageUrl = null;
 
+        // Add profile pic, twitter handler, and user's name to popup
         var popupContent = '<div class="tweet-popup"><div class="tweet-popup-header">' +
                         '<img src="' + t.user.profile_image_url_https + '"/>' +
                         '<span><h5>@' + t.user.screen_name + '</h5><h6>(' + t.user.name + ')</h6></span></div>' +
                         '<p>' + t.text + '</p><p>Posted today at ' + dateStr.toLocaleTimeString() + '</p>';
 
+        // Adds image, if one exists, to popup
         if (t.entities.media != undefined && t.entities.media[0].media_url != undefined &&
-            t.entities.media.type === "photo" ) {
+            t.entities.media.type == "photo" ) {
                 imageUrl = t.entities.media[0].media_url;
                 var image = '<img style="width:150px;height:150px;" src="'+imageUrl+'"/>';
                 popupContent = popupContent + '<p>' + image + '</p>';
             }
 
-        popupContent = popupContent + '</div>';
+        // Adds removal and irrelevant buttons to popup
+        popupContent +=  '<div data-id="' + twitterStream.feature_id + '"><a href="#" class="irrel-tweet">Flag as ' +
+                        'Irrelevant</a>&nbsp;| &nbsp;<a href="#" class="remove-tweet">Remove from Map</a></div>';
+
+        // Closes wrapper div
+        popupContent += '</div>';
 
         var feature_json = {
             type: "Feature",
             properties: {
-                id: twitterStream.tweetIndex,
+                id: twitterStream.feature_id++,
                 text: t.text,
                 source: 'Twitter',
                 image: imageUrl,
@@ -190,9 +200,10 @@ twitterStream.addTweetLayer = function() {
             },
             // Note: coordinates field is GeoJson ready, the geo field isn't
             // Even though they share the same data (for the most part)
-            geometry : t.coordinates,
+            geometry : t.coordinates
         }
 
+        t.feature_json = feature_json;
         features.push(feature_json);
     }
     twitterStream.tweetIndex++;
@@ -200,3 +211,40 @@ twitterStream.addTweetLayer = function() {
     console.log("adding data to twitter layer...");
     twitterStream.tweetLayer.addData(features);
 }
+
+twitterStream.irrelevantTweet = function() {
+    console.log("irrelevant tweet");
+    var markerId = $(this).parent().attr('data-id');
+    markerId = parseInt(markerId);
+
+    var layerList = twitterStream.tweetLayer.getLayers();
+    for ( var layer of layerList ) {
+        if (layer.feature.properties.id === markerId) {
+            twitterStream.tweetLayer.removeLayer(layer);
+            twitterStream.bad_hashtags.concat(layer.properties.feature.hashtags);
+            console.log(twitterStream.bad_hashtags);
+        }
+    }
+}
+
+twitterStream.removeTweet = function() {
+    console.log("removing tweet");
+    var markerId = $(this).parent().attr('data-id');
+    markerId = parseInt(markerId);
+
+    var layerList = twitterStream.tweetLayer.getLayers();
+    for ( var layer of layerList ) {
+        if (layer.feature.properties.id === markerId) {
+            twitterStream.tweetLayer.removeLayer(layer);
+        }
+    }
+}
+
+//twitterStream.removeFromMap = function(markerId) {
+//    var layerList = twitterStream.tweetLayer.getLayers();
+//    for ( var layer of layerList ) {
+//        if (layer.feature.properties.id === markerId) {
+//            twitterStream.tweetLayer.removeLayer(layer);
+//        }
+//    }
+//}

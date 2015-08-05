@@ -121,6 +121,13 @@
     <script type="text/javascript">
         twitterStream.stream_url = "{% url 'twitterfeed'%}";
         twitterStream.get_tweets_url = "{% url 'gettweets'%}";
+
+        $(document).ready( function() {
+
+            $(document).on( "click", "a.irrel-tweet", twitterStream.irrelevantTweet );
+            $(document).on( "click", "a.remove-tweet", twitterStream.removeTweet );
+
+        }); //doc-ready
     </script>
 
     {% compress css %}
