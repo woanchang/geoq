@@ -42,7 +42,7 @@ def twitterfeed(request):
     cache.add(twitter_active_key, False)
 
     # If a stream is currently open
-    if cache.get(twitter_active_key, False) or request.GET['client-stream']:
+    if cache.get(twitter_active_key, False):
         cache.set(twitter_close_key, True)
         print 'Client stopped stream'
         print 'Close stream: ' + str(cache.get(twitter_close_key))
@@ -64,9 +64,6 @@ def twitterfeed(request):
     return HttpResponse(json.dumps(res))
 
 def gettweets(request):
-
-    bad_hashtags = request.GET['bad_hashtags']
-    print str(bad_hashtags)
 
     res = {}
     res['server_stream'] = cache.get(twitter_active_key, False)
