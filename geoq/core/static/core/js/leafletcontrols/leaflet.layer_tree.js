@@ -46,6 +46,9 @@ leaflet_layer_control.initDrawer = function(){
     leaflet_layer_control.addRotationHelper($accordion);
     leaflet_layer_control.addTimescale($accordion);
 
+    // Added by Jared
+    leaflet_layer_control.twitterStream($accordion);
+
 
     //The Layer Controls should also be built and added later in another script, something like:
     // var options = aoi_feature_edit.buildTreeLayers();
@@ -53,6 +56,17 @@ leaflet_layer_control.initDrawer = function(){
 
     return $accordion;
 };
+
+// Added by Jared
+leaflet_layer_control.twitterStream = function($accordion) {
+    var $content = leaflet_layer_control.buildAccordionPanel($accordion,"Twitter Stream");
+    leaflet_layer_control.$feature_info = $("<div>")
+        .html('<button id="twitter-feed" type="button" ' +
+                'class="btn btn-primary btn-lg"> Start Stream </button>')
+        .appendTo($content);
+        $("#twitter-feed").click( function() { twitterStream.toggleStream($(this)); } );
+
+}
 
 leaflet_layer_control.addPreferenceListener = function($accordion){
     var lastOpened = store.get('leaflet_layer_control.layer_accordion');

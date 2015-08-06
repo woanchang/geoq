@@ -31,6 +31,51 @@ from guardian.decorators import permission_required
 from kml_view import *
 from shape_view import *
 
+#Added by Jared
+import json
+from geoq.twitterstream.tasks import clearJson, openStream, twitter_close_key, twitter_active_key
+from django.core.cache import cache
+
+def twitterfeed(request):
+
+    res = {}
+    cache.add(twitter_active_key, False)
+
+    # If a stream is currently open
+    if cache.get(twitter_active_key, False):
+        cache.set(twitter_close_key, True)
+        print 'Client stopped stream'
+        print 'Close stream: ' + str(cache.get(twitter_close_key))
+        return gettweets(request)
+
+    # returns stream.json into empty array
+    clearJson()
+
+    # If a stream isn't currently open
+    cache.set(twitter_active_key, True)
+    cache.set(twitter_close_key, False)
+
+    res['response'] = 'Currently streaming!'
+    res['server_stream'] = True
+
+    mapBounds = eval('[' + request.GET['bounds'] + ']')
+    openStream(mapBounds)
+
+    return HttpResponse(json.dumps(res))
+
+def gettweets(request):
+
+    res = {}
+    res['server_stream'] = cache.get(twitter_active_key, False)
+
+    with open('geoq/twitterstream/stream.json', "r+") as f:
+        res['tweets'] = f.read()
+        f.seek(0)
+        f.write('[]')
+        f.truncate()
+
+    return HttpResponse(json.dumps(res))
+
 
 class Dashboard(TemplateView):
 

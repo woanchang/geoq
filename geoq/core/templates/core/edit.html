@@ -47,6 +47,8 @@
     <script src="{{ layer.layer.url }}maps/api/js?v=3&sensor=false"></script>
     {%  endif %}{% endfor %}
 
+    <script src="{{ STATIC_URL }}core/js/twitter_demo.js" type="text/javascript"></script>
+
     <script type="text/javascript">
 
         leaflet_helper.proxy_path = "{% url 'proxy' %}" + "/"; //TODO: Standardize expression of proxy locations
@@ -116,6 +118,19 @@
 
     </script>
 
+    <!-- Added by Jared -->
+    <script type="text/javascript">
+        twitterStream.stream_url = "{% url 'twitterfeed'%}";
+        twitterStream.get_tweets_url = "{% url 'gettweets'%}";
+
+        $(document).ready( function() {
+
+            $(document).on( "click", "a.irrel-tweet", twitterStream.irrelevantTweet );
+            $(document).on( "click", "a.remove-tweet", twitterStream.removeTweet );
+
+        }); //doc-ready
+    </script>
+
     {% compress css %}
         {% leaflet_css plugins="draw"%}
         {% import_django_select2_css %}
@@ -128,6 +143,33 @@
         <link rel="stylesheet" href="{{ STATIC_URL }}core/js/noUiSlider/nouislider.css">
 
     {% endcompress %}
+
+    <!-- Added by Jared -->
+    <style type="text/css">
+        div.tweet-popup-header {
+            text-align: center;
+        }
+        div.tweet-popup-header img,
+        div.tweet-popup-header span {
+            display: inline-block;
+        }
+        div.tweet-popup-header img {
+            margin-right: 3px;
+            float: left;
+        }
+        div.tweet-popup-header span {
+            text-align: center;
+        }
+        div.tweet-popup-header span h5,
+        div.tweet-popup-header span h6 {
+            margin: 0;
+            padding 0;
+            margin-bottom: 3px;
+        }
+        div.tweet-popup p {
+            min-width: 301px;
+        }
+    </style>
 {% endblock %}
 
 {% block container %}
