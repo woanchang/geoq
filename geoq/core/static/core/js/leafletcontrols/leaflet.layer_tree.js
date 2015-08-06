@@ -44,6 +44,7 @@ leaflet_layer_control.initDrawer = function(){
     leaflet_layer_control.addLayerComparison($accordion);
     leaflet_layer_control.addGeoOverview($accordion);
     leaflet_layer_control.addRotationHelper($accordion);
+    leaflet_layer_control.addTimescale($accordion);
 
 
     //The Layer Controls should also be built and added later in another script, something like:
@@ -178,6 +179,143 @@ leaflet_layer_control.addGeoOverview = function($accordion) {
 
 
      });
+}
+
+
+var slider_settings = {};
+/*Adds functionality to set a timescale used to limit 
+the features that are shown based on their date/time*/
+leaflet_layer_control.addTimescale = function($accordion) {
+    var timeScale = leaflet_layer_control.buildAccordionPanel($accordion,"Date-time Range Picker");
+    var htmlToAdd = '<div><h4>Start Date/Time:</h4><input id="startdatetime" type="text" value="2000/1/1 00:00"></div>' +
+        '<div><h4>End Date/Time:</h4><input id="enddatetime" type="text" value="2020/12/30 23:59"></div>' + 
+        '<div><h4>Current Date/Time:</h4><input id="currentdatetime" type="text"></div>' +
+        '<div id="dateTimeSlider"></div>' + 
+        '<div><button onclick="leaflet_layer_control.runTimeFrame();">Run Timeflow</button>' +
+        '<button onclick="clearInterval(timeDate.intId);">End Timeflow</button></div>';
+    var timeDom = $(htmlToAdd);
+    timeDom.appendTo(timeScale);
+    $('#startdatetime').datetimepicker();
+    $('#enddatetime').datetimepicker();
+
+    var dateSlider = document.getElementById('dateTimeSlider');
+    slider_settings = {
+    // Create two timestamps to define a range.
+        range: {
+            min: timestamp($("#startdatetime").val()),
+            max: timestamp($("#enddatetime").val())
+        },
+
+    // Steps of one day
+        step: 24 * 60 * 60 * 1000,
+
+    // Two more timestamps indicate the handle starting positions.
+        start: [ timestamp($("#startdatetime").val()) ],
+
+    };
+    noUiSlider.create(dateSlider, slider_settings);
+
+    var currentdate = new Date(parseInt(dateSlider.noUiSlider.get()));
+    dateSlider.noUiSlider.on('change', function(){
+        currentdate = new Date(parseInt(dateSlider.noUiSlider.get()));
+        $('#currentdatetime').attr('value', currentdate.toString());
+        leaflet_layer_control.drawEachLayer(null,map);
+    });
+
+    $('#startdatetime').change(function(){
+        dateSlider.noUiSlider.destroy();
+        slider_settings.range.min = timestamp($("#startdatetime").val());
+        slider_settings.range.max = timestamp($("#enddatetime").val());
+
+        noUiSlider.create(dateSlider, slider_settings);
+
+        currentdate = new Date(parseInt(dateSlider.noUiSlider.get()));
+        $('#currentdatetime').attr('value', currentdate.toString());    
+
+        dateSlider.noUiSlider.on('change', function(){
+            currentdate = new Date(parseInt(dateSlider.noUiSlider.get()));
+            $('#currentdatetime').attr('value', currentdate.toString());
+            leaflet_layer_control.drawEachLayer(null,map);
+        });
+    });
+
+    $('#enddatetime').change(function(){
+        dateSlider.noUiSlider.destroy();
+        slider_settings.range.min = timestamp($("#startdatetime").val());
+        slider_settings.range.max = timestamp($("#enddatetime").val());
+
+        noUiSlider.create(dateSlider, slider_settings);
+
+        currentdate = new Date(parseInt(dateSlider.noUiSlider.get()));
+        $('#currentdatetime').attr('value', currentdate.toString());
+
+        dateSlider.noUiSlider.on('change', function(){
+            currentdate = new Date(parseInt(dateSlider.noUiSlider.get()));
+            $('#currentdatetime').attr('value', currentdate.toString());
+            leaflet_layer_control.drawEachLayer(null,map);
+        });
+    });
+
+    $('#currentdatetime').attr('value', currentdate.toString());
+}
+
+var timeDate = {};
+
+//Runs loop of calling function to change range slider time, and update map 
+leaflet_layer_control.runTimeFrame = function(){
+    timeDate.old_time = new Date($('#currentdatetime').val());
+    timeDate.end_time = new Date($('#enddatetime').val());
+    timeDate.new_time = new Date();
+    var timeout = null;
+    var dateSlider = document.getElementById('dateTimeSlider');
+
+    setTimeout( function() { 
+        timeDate.intId = setInterval( function() {
+            if ( timeDate.old_time > timeDate.end_time ) {
+                clearInterval(timeDate.intId);
+                return;
+            }
+            timeDate.old_time = new Date($('#currentdatetime').val());
+            timeDate.new_time = new Date(timeDate.old_time.valueOf() + (1000 * 3600 * 24));
+            //console.log("Old time: " + timeDate.old_time + ", New time: " + timeDate.new_time + ", End time: " + timeDate.end_time);
+            $('#currentdatetime').attr('value', timeDate.new_time.toString());
+            dateSlider.noUiSlider.set(timeDate.old_time);
+            leaflet_layer_control.drawEachLayer(null,map);
+        }, 500);
+    }, 1000);
+}
+
+
+function timestamp(str){
+    return new Date(str).getTime();   
+}
+
+//Check values from date/time picker, hide if not within ranger
+leaflet_layer_control.parseDateTime = function(selected_features = null){
+    if(!Array.isArray(selected_features)){
+        selected_features = aoi_feature_edit.job_features_geojson.features;
+    }
+    //console.log(selected_features);
+
+    //Iterate over all features on the map
+    if(selected_features.length > 0){
+        _.each(selected_features,function(feature){
+            //Grab the created_at date from the feature
+            var date_parser = feature.properties.created_at.replace("UTC","Z");
+            var feature_date = new Date(Date.parse(date_parser));
+
+            var start_date = new Date($('#currentdatetime').val());
+            var end_date = new Date($('#enddatetime').val());
+
+            if( !(feature_date >= start_date) || !(feature_date <= end_date) ){
+                feature_manager.setOpacity(feature.layer, 0); //Hide the feature
+            }
+            else{
+                feature_manager.setOpacity(feature.layer, 100); //Show the feature
+            }
+
+        });
+    }
 }
 
 leaflet_layer_control.addLayerComparison = function($accordion) {
@@ -1197,7 +1335,6 @@ leaflet_layer_control.removeDuplicateLayers = function(layerList, layer){
 
 leaflet_layer_control.zIndexesOfHighest = 2;
 leaflet_layer_control.setLayerOpacity = function (layer, amount, doNotMoveToTop){
-
     if (!layer.options) layer.options={};
     layer.options.opacity = amount;
 
@@ -1485,11 +1622,22 @@ leaflet_layer_control.addLayerControl = function (map, options, $accordion) {
         leaflet_layer_control.toggleDrawer();
     }
 };
-leaflet_layer_control.drawEachLayer=function(data,map,doNotMoveToTop){
-
-    var selectedLayers = data.tree.getSelectedNodes();
+/*Draws all layers, if they are selected and then calls parseDateTime
+to check if they are within the date/time range, hiding features that are not.
+*/
+leaflet_layer_control.drawEachLayer=function(data = null,map,doNotMoveToTop){
+    var selectedLayers = [];
+    if(data == null){
+        selectedLayers = $('#layers_tree_control').fancytree('getRootNode').tree.getSelectedNodes();
+    }
+    else{
+        selectedLayers = data.tree.getSelectedNodes();
+    }
+    //console.log(selectedLayers);
     var layersUnClicked = _.difference(leaflet_layer_control.lastSelectedNodes, selectedLayers);
     var layersClicked = _.difference(selectedLayers, leaflet_layer_control.lastSelectedNodes);
+    console.log(layersClicked);
+    //console.log(layersUnClicked);
 
     _.each(layersUnClicked,function(layer_obj){
         if (layer_obj && layer_obj.data && _.toArray(layer_obj.data).length) {
@@ -1586,6 +1734,42 @@ leaflet_layer_control.drawEachLayer=function(data,map,doNotMoveToTop){
     });
     var checkedIDs_str = checkedIDs.join(",");
     store.set('leaflet_layer_control.layers', checkedIDs_str);
+
+    //Gather all feature types that are selected
+    var feature_types = [];
+    for(var i = 0;i < aoi_feature_edit.feature_types.length; i++){
+        if(aoi_feature_edit.feature_types[i]){
+            //Boolean is for whether or not the feature is enabled
+            feature_types.push([aoi_feature_edit.feature_types[i].name, aoi_feature_edit.feature_types[i].id, false]);
+        }
+    }
+    //If no changes in selected layers, use currently selected layers
+    if(layersClicked.length <= 0){
+        layersClicked = selectedLayers;
+    }
+    for(i = 0;i < layersClicked.length;i++){
+        if(layersClicked[i].folder == undefined){
+            for(var j = 0;j < feature_types.length;j++){
+                if(layersClicked[i].title == feature_types[j][0]){
+                    feature_types[j][2] = true;
+                }
+            }
+        }
+    }
+    //console.log(feature_types);
+
+    var selected_features = [];
+    //Consolidate features in selected layers
+    _.each(aoi_feature_edit.job_features_geojson.features, function(feature){
+        for(i = 0;i < feature_types.length;i++){
+            if((feature.properties.template == feature_types[i][1])&&(feature_types[i][2] == true)){
+                selected_features.push(feature);
+            }
+        }
+    });
+    //console.log(selected_features);
+    leaflet_layer_control.parseDateTime(selected_features); //Check for date time on all selected features
+
 };
 
 leaflet_layer_control.toggleZooming=function($control){
