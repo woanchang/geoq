@@ -42,7 +42,7 @@ class TwitterStream(StreamListener):
         with open(self.STREAM_FILE, mode='r') as feed:
             tweets = json.load(feed)
             # close stream if the file is getting too large
-            if len(tweets) > 59:
+            if len(tweets) > 19:
                 cache.set(twitter_close_key, True)
         with open(self.STREAM_FILE, mode='w') as feed:
             tweets.append(json_data)

@@ -53,7 +53,7 @@ twitterStream.toggleStream = function(_button) {
         twitterStream.startStream();
     }
 
-    twitterStream.stream_open = !this.stream_open;
+    //twitterStream.stream_open = !this.stream_open;
 }
 
 twitterStream.startStream = function() {
@@ -76,6 +76,7 @@ twitterStream.startStream = function() {
 }
 
 twitterStream.toggleStreamAjaxFunc = function() {
+    console.log("before stream_open", twitterStream.stream_open);
     jQuery.ajax({
         type: "GET",
         url: twitterStream.stream_url,
@@ -86,7 +87,18 @@ twitterStream.toggleStreamAjaxFunc = function() {
             if ( res.tweets != undefined ) {
                 res.tweets = JSON.parse(res.tweets);
             }
+
+            // Add tweets to map if tweets where returned
+            if (res.tweets != undefined && res.tweets != null) {
+                res.tweets = JSON.parse(res.tweets);
+
+                if ( res.tweets instanceof Array && res.tweets.length > 0) {
+                    twitterStream.tweets.push(res.tweets);
+                    twitterStream.addTweetLayer();
+                }
+            }
             console.log(res);
+            console.log("after stream_open", twitterStream.stream_open);
         },
         error: function(e, msg) {
             twitterStream.closeStream();
@@ -166,16 +178,21 @@ twitterStream.addTweetLayer = function() {
                         '<p>' + t.text + '</p><p>Posted today at ' + dateStr.toLocaleTimeString() + '</p>';
 
         // Adds image, if one exists, to popup
-        if (t.entities.media != undefined && t.entities.media[0].media_url != undefined &&
-            t.entities.media.type == "photo" ) {
-                imageUrl = t.entities.media[0].media_url;
-                var image = '<img style="width:150px;height:150px;" src="'+imageUrl+'"/>';
-                popupContent = popupContent + '<p>' + image + '</p>';
+        if ( ("media" in t.entities) && (t.entities.media.length > 0) ) {
+            var photo = t.entities.media[0];
+            if ( photo.type !== "photo" ) {
+                return;
             }
+            imageUrl = photo.media_url_https;
+            var image = '<div class="tweet-img"><img style="width:125;height:125;" src="'+imageUrl+'"/>' +
+                        '<span><a href="#">Click to see full sized image</a></span></div>';
+            popupContent = popupContent + '<p>' + image + '</p>';
+        }
 
         // Adds removal and irrelevant buttons to popup
         popupContent +=  '<div data-id="' + twitterStream.feature_id + '"><a href="#" class="irrel-tweet">Flag as ' +
-                        'Irrelevant</a>&nbsp;| &nbsp;<a href="#" class="remove-tweet">Remove from Map</a></div>';
+                        'Irrelevant</a>&nbsp;|&nbsp;<a href="#" class="remove-tweet">Remove from Map</a>' +
+                        '&nbsp;|&nbsp;<a href="#" class="save-tweet">Save Tweet</a></div>';
 
         // Closes wrapper div
         popupContent += '</div>';

@@ -40,9 +40,10 @@ def twitterfeed(request):
 
     res = {}
     cache.add(twitter_active_key, False)
+    client_stream = request.GET['client-stream']
 
     # If a stream is currently open
-    if cache.get(twitter_active_key, False):
+    if (cache.get(twitter_active_key, False) is True) or (client_stream is True):
         cache.set(twitter_close_key, True)
         print 'Client stopped stream'
         print 'Close stream: ' + str(cache.get(twitter_close_key))
