@@ -16,6 +16,7 @@ twitter_close_key = 'twitter_close_stream'
 #This is a basic listener that just prints received tweets to file.
 class TwitterStream(StreamListener):
     STREAM_FILE = 'geoq/twitterstream/stream.json'
+    BLACKLIST_FILE = 'geoq/twitterstream/hashtag_blacklist.json'
 
     @staticmethod
     def close_stream():
@@ -76,7 +77,7 @@ class TwitterStream(StreamListener):
 
 @shared_task
 def openStream(geoCode):
-    #This handles Twitter authetification and the connection to Twitter Streaming API
+    # This handles Twitter authetification and the connection to Twitter Streaming API
     l = TwitterStream()
     auth = OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
@@ -92,4 +93,8 @@ def testTask(geoCode):
 def clearJson():
     # guarantees empty json when stream starts
     with open(TwitterStream.STREAM_FILE, mode='w') as f:
-            f.write('[]')
+        f.write('[]')
+    with open(TwitterStream.BLACKLIST_FILE, mode='w') as f:
+        f.write('[]')
+
+

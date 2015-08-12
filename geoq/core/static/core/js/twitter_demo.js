@@ -7,7 +7,7 @@ twitterStream.tweetFeatures = [];
 twitterStream.tweetIndex = 0;
 twitterStream.tweetLayer = undefined;
 twitterStream.feature_id = 0;
-twitterStream.bad_hashtags = [];
+twitterStream.bad_hashtags = ["test1"];
 
 
 twitterStream.toggleStream = function(_button) {
@@ -51,6 +51,7 @@ twitterStream.toggleStream = function(_button) {
         twitterStream.$button = _button;
         twitterStream.$button.text("Stop Stream");
         twitterStream.startStream();
+        twitterStream.stream_open = true;
     }
 
     //twitterStream.stream_open = !this.stream_open;
@@ -64,7 +65,7 @@ twitterStream.startStream = function() {
 
         setTimeout( function() {
             twitterStream.intervalId = twitterStream.getTweets();
-        }, 5000 );
+        }, 2500 );
 
         twitterStream.toggleStreamAjaxFunc();
 
@@ -90,7 +91,12 @@ twitterStream.toggleStreamAjaxFunc = function() {
 
             // Add tweets to map if tweets where returned
             if (res.tweets != undefined && res.tweets != null) {
-                res.tweets = JSON.parse(res.tweets);
+                try {
+                    res.tweets = JSON.parse(res.tweets);
+                } catch(e) {
+                    twitterStream.stream_open = false;
+                    return;
+                }
 
                 if ( res.tweets instanceof Array && res.tweets.length > 0) {
                     twitterStream.tweets.push(res.tweets);
@@ -136,7 +142,7 @@ twitterStream.getTweetsAjaxFunc = function() {
     jQuery.ajax({
         type: "GET",
         url: twitterStream.get_tweets_url,
-        data: {"bad_hashtags" : twitterStream.bad_hashtags},
+        data: {"bad-hashtags" : twitterStream.bad_hashtags, "client-stream" : twitterStream.stream_open},
         dataType: "json",
         success: function(res) {
             if (res.server_stream == undefined || !res.server_stream) {

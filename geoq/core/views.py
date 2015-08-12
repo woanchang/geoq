@@ -60,11 +60,28 @@ def twitterfeed(request):
     res['server_stream'] = True
 
     mapBounds = eval('[' + request.GET['bounds'] + ']')
-    openStream(mapBounds)
+    # openStream(mapBounds)
 
     return HttpResponse(json.dumps(res))
 
 def gettweets(request):
+
+    print str(request.GET)
+
+    # checks if hashtags were passed during polling
+    # [] is necessary because bad-hashtags is an array which converts to a list
+    if 'bad-hashtags[]' in request.GET:
+        # returns a list from the QueryDict request.GET
+        badHashtags = request.GET.get('bad-hashtags', [])
+        with open('geoq/twitterstream/hashtag_blacklist.json', "r+") as f:
+            print 'in open hashtag_blacklist.json'
+            tempBlacklist = json.load(f)
+            # merges both list while removing duplicates
+            mergedList = list(set(tempBlacklist + badHashtags))
+            print str('mergedList:'), mergedList
+            f.seek(0)
+            json.dump(mergedList, f)
+            f.truncate()
 
     res = {}
     res['server_stream'] = cache.get(twitter_active_key, False)
