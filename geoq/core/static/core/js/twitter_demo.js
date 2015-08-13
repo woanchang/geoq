@@ -7,7 +7,7 @@ twitterStream.tweetFeatures = [];
 twitterStream.tweetIndex = 0;
 twitterStream.tweetLayer = undefined;
 twitterStream.feature_id = 0;
-twitterStream.bad_hashtags = ["test1"];
+twitterStream.bad_hashtags = [];
 
 
 twitterStream.toggleStream = function(_button) {
@@ -69,15 +69,12 @@ twitterStream.startStream = function() {
 
         twitterStream.toggleStreamAjaxFunc();
 
-        console.log("Stream Opened");
-
     } else {
         console.log("Invalid map or bounds!");
     }
 }
 
 twitterStream.toggleStreamAjaxFunc = function() {
-    console.log("before stream_open", twitterStream.stream_open);
     jQuery.ajax({
         type: "GET",
         url: twitterStream.stream_url,
@@ -103,8 +100,7 @@ twitterStream.toggleStreamAjaxFunc = function() {
                     twitterStream.addTweetLayer();
                 }
             }
-            console.log(res);
-            console.log("after stream_open", twitterStream.stream_open);
+            console.log("server response:", res);
         },
         error: function(e, msg) {
             twitterStream.closeStream();
@@ -126,12 +122,10 @@ twitterStream.closeStream = function() {
         twitterStream.$button.prop("disabled", false);
         console.log("Ready for streaming");
     }, 5 * 1000);
-    console.log("Stream Closed");
 }
 
 twitterStream.getTweets = function() {
     var queryId = setInterval( function() {
-        console.log("querying Twitter...");
         twitterStream.getTweetsAjaxFunc();
     }, this.queryInterval );
 
@@ -146,7 +140,6 @@ twitterStream.getTweetsAjaxFunc = function() {
         dataType: "json",
         success: function(res) {
             if (res.server_stream == undefined || !res.server_stream) {
-                console.log("server closed stream!");
                 twitterStream.closeStream();
             }
 
@@ -158,7 +151,8 @@ twitterStream.getTweetsAjaxFunc = function() {
                     twitterStream.addTweetLayer();
                 }
             }
-            console.log(res);
+            twitterStream.bad_hashtags = new Array();
+            console.log("server response:", res);
 
         },
         error: function(e, msg) {
@@ -231,7 +225,6 @@ twitterStream.addTweetLayer = function() {
     }
     twitterStream.tweetIndex++;
 
-    console.log("adding data to twitter layer...");
     twitterStream.tweetLayer.addData(features);
 }
 
@@ -243,15 +236,17 @@ twitterStream.irrelevantTweet = function() {
     var layerList = twitterStream.tweetLayer.getLayers();
     for ( var layer of layerList ) {
         if (layer.feature.properties.id === markerId) {
-            twitterStream.tweetLayer.removeLayer(layer);
-            twitterStream.bad_hashtags.concat(layer.properties.feature.hashtags);
+            console.log(layer);
+            var tags = twitterStream.bad_hashtags;
+            twitterStream.bad_hashtags =
+                tags.concat(layer.feature.properties.hashtags);
             console.log(twitterStream.bad_hashtags);
+            twitterStream.tweetLayer.removeLayer(layer);
         }
     }
 }
 
 twitterStream.removeTweet = function() {
-    console.log("removing tweet");
     var markerId = $(this).parent().attr('data-id');
     markerId = parseInt(markerId);
 

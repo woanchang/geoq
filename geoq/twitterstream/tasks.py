@@ -49,7 +49,7 @@ class TwitterStream(StreamListener):
             tweets.append(json_data)
             json.dump(tweets, feed)
 
-        print raw_data
+        # print raw_data
 
         # Check if stream should close, defaults to True
         # defaulting to True causes stream to terminate when cache expires
