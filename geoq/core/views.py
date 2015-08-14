@@ -67,10 +67,13 @@ def twitterfeed(request):
 def gettweets(request):
 
     # Get the hashtags to be added to the blacklist
-    badHashtags = json.loads(request.GET.get('bad-hashtags'), None)
+    # defaults to None if key doesn't exist
+    badHashtags = request.GET.get('bad-hashtags', None)
 
     # Ensure 'bad-hashtags' key exists
     if badHashtags is not None:
+        # De-stringify array passed by ajax
+        badHashtags = json.loads(badHashtags)
         # Adds the bad hashtags to the blacklist
         with open('geoq/twitterstream/hashtag_blacklist.json', "r+") as f:
             tempBlacklist = json.load(f)

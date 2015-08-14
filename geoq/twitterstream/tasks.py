@@ -26,6 +26,8 @@ class TwitterStream(StreamListener):
 
     def on_data(self, raw_data):
         """ Overwritten method which handles when tweets come in from Twitter """
+        print 'Tweet received from Twitter...'
+
         cache.add('twitter_close_stream', True)
 
         tweets = []
@@ -34,10 +36,12 @@ class TwitterStream(StreamListener):
 
         # filters out not English tweets by short-circuiting
         if not (('lang' in json_data) and (json_data['lang'] == 'en')):
+            print 'Tweet filtered out via English filter...'
             return True
 
         # filters out tweets without coordinates by short-circuiting
         if ('coordinates' in json_data) and (json_data['coordinates'] is None):
+            print 'Tweet filtered out via coordinates filter...'
             return True
 
         # filters out tweets against the bad hashtag blacklist by short-circuiting
@@ -49,6 +53,7 @@ class TwitterStream(StreamListener):
                 blacklist = json.load(f)
                 duplicates = set(blacklist).intersection(currTweetTags)
                 if len(duplicates) > 0:
+                    print 'Tweet filtered out via blacklist...'
                     return True
 
         with open(self.STREAM_FILE, mode='r') as feed:
@@ -61,6 +66,7 @@ class TwitterStream(StreamListener):
             json.dump(tweets, feed)
 
         # print raw_data
+        print 'Tweet saved in stream.json'
 
         # Check if stream should close, defaults to True
         # defaulting to True causes stream to terminate when cache expires
