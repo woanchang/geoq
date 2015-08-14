@@ -66,19 +66,16 @@ def twitterfeed(request):
 
 def gettweets(request):
 
-    print str(request.GET)
+    # Get the hashtags to be added to the blacklist
+    badHashtags = json.loads(request.GET.get('bad-hashtags'), None)
 
-    # checks if hashtags were passed during polling
-    # [] is necessary because bad-hashtags is an array which converts to a list
-    if 'bad-hashtags[]' in request.GET:
-        # returns a list from the QueryDict request.GET
-        badHashtags = request.GET.get('bad-hashtags', [])
+    # Ensure 'bad-hashtags' key exists
+    if badHashtags is not None:
+        # Adds the bad hashtags to the blacklist
         with open('geoq/twitterstream/hashtag_blacklist.json', "r+") as f:
-            print 'in open hashtag_blacklist.json'
             tempBlacklist = json.load(f)
             # merges both lists while removing duplicates
             mergedList = list(set(tempBlacklist + badHashtags))
-            print '\n\nmergedList:', str(mergedList) + '\n\n'
             f.seek(0)
             json.dump(mergedList, f)
             f.truncate()

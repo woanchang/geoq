@@ -136,7 +136,11 @@ twitterStream.getTweetsAjaxFunc = function() {
     jQuery.ajax({
         type: "GET",
         url: twitterStream.get_tweets_url,
-        data: {"bad-hashtags" : twitterStream.bad_hashtags, "client-stream" : twitterStream.stream_open},
+        data: {
+            //stringify array to pass to python. Had difficulties with other methods
+            "bad-hashtags" : JSON.stringify(twitterStream.bad_hashtags),
+            "client-stream" : twitterStream.stream_open
+        },
         dataType: "json",
         success: function(res) {
             if (res.server_stream == undefined || !res.server_stream) {
@@ -151,7 +155,9 @@ twitterStream.getTweetsAjaxFunc = function() {
                     twitterStream.addTweetLayer();
                 }
             }
-            twitterStream.bad_hashtags = new Array();
+
+            //empties array
+            twitterStream.bad_hashtags.length = 0;
             console.log("server response:", res);
 
         },
@@ -236,11 +242,10 @@ twitterStream.irrelevantTweet = function() {
     var layerList = twitterStream.tweetLayer.getLayers();
     for ( var layer of layerList ) {
         if (layer.feature.properties.id === markerId) {
-            console.log(layer);
-            var tags = twitterStream.bad_hashtags;
-            twitterStream.bad_hashtags =
-                tags.concat(layer.feature.properties.hashtags);
-            console.log(twitterStream.bad_hashtags);
+            // Collect hashtags
+            for ( var tag of layer.feature.properties.hashtags ) {
+                twitterStream.bad_hashtags.push(tag.text);
+            }
             twitterStream.tweetLayer.removeLayer(layer);
         }
     }

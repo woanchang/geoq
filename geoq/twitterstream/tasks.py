@@ -40,6 +40,17 @@ class TwitterStream(StreamListener):
         if ('coordinates' in json_data) and (json_data['coordinates'] is None):
             return True
 
+        # filters out tweets against the bad hashtag blacklist by short-circuiting
+        if json_data['entities']['hashtags']:
+            with open(TwitterStream.BLACKLIST_FILE, mode='r') as f:
+                currTweetTags = []
+                for tag in json_data['entities']['hashtags']:
+                    currTweetTags.append(tag['text'])
+                blacklist = json.load(f)
+                duplicates = set(blacklist).intersection(currTweetTags)
+                if len(duplicates) > 0:
+                    return True
+
         with open(self.STREAM_FILE, mode='r') as feed:
             tweets = json.load(feed)
             # close stream if the file is getting too large
