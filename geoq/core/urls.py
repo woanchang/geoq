@@ -14,9 +14,9 @@ from geoq.maps.views import feature_delete
 
 urlpatterns = patterns('',
     #Added by Jared
-    #url(r'^jobs/(?P<pk>\d+)/(?P<status>[a-zA-Z_ ]+)?/?$/twitterfeed', 'twitterfeed'),
     url(r'^twitterfeed', twitterfeed, name='twitterfeed'),
     url(r'^gettweets', gettweets, name='gettweets'),
+    url(r'^savetweet2db', savetweet2db, name='savetweet2db'),
 
     url(r'^$', Dashboard.as_view(), name='home'),
 

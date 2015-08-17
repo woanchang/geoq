@@ -185,19 +185,19 @@ twitterStream.addTweetLayer = function() {
 
         // Adds image, if one exists, to popup
         if ( ("media" in t.entities) && (t.entities.media.length > 0) ) {
-            var photo = t.entities.media[0];
-            if ( photo.type !== "photo" ) {
+            var media = t.entities.media[0];
+            if ( media.type !== "photo" ) {
                 return;
             }
-            imageUrl = photo.media_url_https;
+            imageUrl = media.media_url_https;
             var image = '<div class="tweet-img"><img style="width:125;height:125;" src="'+imageUrl+'"/>' +
                         '<span><a href="#">Click to see full sized image</a></span></div>';
             popupContent = popupContent + '<p>' + image + '</p>';
         }
 
         // Adds removal and irrelevant buttons to popup
-        popupContent +=  '<div data-id="' + twitterStream.feature_id + '"><a href="#" class="irrel-tweet">Flag as ' +
-                        'Irrelevant</a>&nbsp;|&nbsp;<a href="#" class="remove-tweet">Remove from Map</a>' +
+        popupContent += '<div data-id="' + twitterStream.feature_id + '"><a href="#" class="irrel-tweet">Flag ' +
+                        'as Irrelevant</a>&nbsp;|&nbsp;<a href="#" class="remove-tweet">Remove from Map</a>' +
                         '&nbsp;|&nbsp;<a href="#" class="save-tweet">Save Tweet</a></div>';
 
         // Closes wrapper div
@@ -219,6 +219,7 @@ twitterStream.addTweetLayer = function() {
                 tweet_id: t.id,
                 timestamp: t.created_at,
                 hashtags: t.entities.hashtags,
+                tweet_data: t,
                 popupContent: popupContent
             },
             // Note: coordinates field is GeoJson ready, the geo field isn't
@@ -234,40 +235,104 @@ twitterStream.addTweetLayer = function() {
     twitterStream.tweetLayer.addData(features);
 }
 
-twitterStream.irrelevantTweet = function() {
-    console.log("irrelevant tweet");
-    var markerId = $(this).parent().attr('data-id');
+twitterStream.selectTweetLayer = function($tweet) {
+    var markerId = $tweet.parent().attr('data-id');
     markerId = parseInt(markerId);
 
     var layerList = twitterStream.tweetLayer.getLayers();
     for ( var layer of layerList ) {
         if (layer.feature.properties.id === markerId) {
-            // Collect hashtags
-            for ( var tag of layer.feature.properties.hashtags ) {
-                twitterStream.bad_hashtags.push(tag.text);
-            }
-            twitterStream.tweetLayer.removeLayer(layer);
+            //console.log(layer);
+            return layer;
         }
     }
+
+    return null;
+}
+
+twitterStream.irrelevantTweet = function() {
+    console.log("irrelevant tweet");
+//    var markerId = $(this).parent().attr('data-id');
+//    markerId = parseInt(markerId);
+//
+//    var layerList = twitterStream.tweetLayer.getLayers();
+//    for ( var layer of layerList ) {
+//        if (layer.feature.properties.id === markerId) {
+//            // Collect hashtags
+//            for ( var tag of layer.feature.properties.hashtags ) {
+//                twitterStream.bad_hashtags.push(tag.text);
+//            }
+//            twitterStream.tweetLayer.removeLayer(layer);
+//        }
+//    }
+
+    $tweet = twitterStream.selectTweetLayer($(this));
+    if ( $tweet == null || $tweet == undefined ) {
+        console.log("error with irrelevant tweet");
+        return;
+    }
+
+    // Collect hashtags
+    for ( var tag of $tweet.feature.properties.hashtags ) {
+        twitterStream.bad_hashtags.push(tag.text);
+    }
+    twitterStream.tweetLayer.removeLayer($tweet);
 }
 
 twitterStream.removeTweet = function() {
-    var markerId = $(this).parent().attr('data-id');
-    markerId = parseInt(markerId);
-
-    var layerList = twitterStream.tweetLayer.getLayers();
-    for ( var layer of layerList ) {
-        if (layer.feature.properties.id === markerId) {
-            twitterStream.tweetLayer.removeLayer(layer);
-        }
-    }
-}
-
-//twitterStream.removeFromMap = function(markerId) {
+//    var markerId = $(this).parent().attr('data-id');
+//    markerId = parseInt(markerId);
+//
 //    var layerList = twitterStream.tweetLayer.getLayers();
 //    for ( var layer of layerList ) {
 //        if (layer.feature.properties.id === markerId) {
 //            twitterStream.tweetLayer.removeLayer(layer);
 //        }
 //    }
-//}
+
+    console.log("this", $(this));
+    $tweet = twitterStream.selectTweetLayer($(this));
+    if ( $tweet == null || $tweet == undefined ) {
+        console.log("error with remove tweet");
+        return;
+    }
+
+    twitterStream.tweetLayer.removeLayer($tweet);
+}
+
+twitterStream.saveTweet = function() {
+    console.log("save tweet...");
+
+    $tweet = twitterStream.selectTweetLayer($(this));
+    if ( $tweet == null || $tweet == undefined ) {
+        console.log("error with save tweet");
+        return;
+    }
+
+    tweet_data = $tweet.feature.properties.tweet_data;
+
+    console.log("gathered tweet data");
+
+    // defining success/error methods here to prevent ajax recursion error
+    var onSuccess = function(res) {
+        console.log("save tweet response:", res);
+    }
+    var onError = function(e, msg) {
+        console.log(e.status + " - " + e.statusText + " [" + msg + "]");
+        console.log(e);
+    }
+
+    jQuery.ajax({
+        type: "POST",
+        async: true,
+        cache: false,
+        url: twitterStream.save_tweet_url,
+        data: {tweet_data: tweet_data},
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: onSuccess,
+        error: onError
+    }); //ajax
+
+    console.log("ajax request sent");
+}

@@ -122,11 +122,13 @@
     <script type="text/javascript">
         twitterStream.stream_url = "{% url 'twitterfeed'%}";
         twitterStream.get_tweets_url = "{% url 'gettweets'%}";
+        twitterStream.save_tweet_url = "{% url 'savetweet2db'%}";
 
         $(document).ready( function() {
 
             $(document).on( "click", "a.irrel-tweet", twitterStream.irrelevantTweet );
             $(document).on( "click", "a.remove-tweet", twitterStream.removeTweet );
+            $(document).on( "click", "a.save-tweet", twitterStream.saveTweet );
             $(document).on( "click", "div.tweet-popup div.tweet-img", function() {
                 var __imgUrl__ = $(this).find("img").attr("src");
                 window.open(__imgUrl__, '_blank');
