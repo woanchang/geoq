@@ -16,7 +16,7 @@ urlpatterns = patterns('',
     #Added by Jared
     url(r'^twitterfeed', twitterfeed, name='twitterfeed'),
     url(r'^gettweets', gettweets, name='gettweets'),
-    url(r'^savetweet2db', savetweet2db, name='savetweet2db'),
+    url(r'^savetweet', savetweet, name='savetweet'),
 
     url(r'^$', Dashboard.as_view(), name='home'),
 

@@ -219,7 +219,7 @@ twitterStream.addTweetLayer = function() {
                 tweet_id: t.id,
                 timestamp: t.created_at,
                 hashtags: t.entities.hashtags,
-                tweet_data: t,
+                tweet_data: JSON.stringify(t),
                 popupContent: popupContent
             },
             // Note: coordinates field is GeoJson ready, the geo field isn't
@@ -251,21 +251,6 @@ twitterStream.selectTweetLayer = function($tweet) {
 }
 
 twitterStream.irrelevantTweet = function() {
-    console.log("irrelevant tweet");
-//    var markerId = $(this).parent().attr('data-id');
-//    markerId = parseInt(markerId);
-//
-//    var layerList = twitterStream.tweetLayer.getLayers();
-//    for ( var layer of layerList ) {
-//        if (layer.feature.properties.id === markerId) {
-//            // Collect hashtags
-//            for ( var tag of layer.feature.properties.hashtags ) {
-//                twitterStream.bad_hashtags.push(tag.text);
-//            }
-//            twitterStream.tweetLayer.removeLayer(layer);
-//        }
-//    }
-
     $tweet = twitterStream.selectTweetLayer($(this));
     if ( $tweet == null || $tweet == undefined ) {
         console.log("error with irrelevant tweet");
@@ -280,17 +265,6 @@ twitterStream.irrelevantTweet = function() {
 }
 
 twitterStream.removeTweet = function() {
-//    var markerId = $(this).parent().attr('data-id');
-//    markerId = parseInt(markerId);
-//
-//    var layerList = twitterStream.tweetLayer.getLayers();
-//    for ( var layer of layerList ) {
-//        if (layer.feature.properties.id === markerId) {
-//            twitterStream.tweetLayer.removeLayer(layer);
-//        }
-//    }
-
-    console.log("this", $(this));
     $tweet = twitterStream.selectTweetLayer($(this));
     if ( $tweet == null || $tweet == undefined ) {
         console.log("error with remove tweet");
@@ -309,6 +283,7 @@ twitterStream.saveTweet = function() {
         return;
     }
 
+    console.log("Tweet Data: ", $tweet.feature.properties.tweet_data);
     tweet_data = $tweet.feature.properties.tweet_data;
 
     console.log("gathered tweet data");

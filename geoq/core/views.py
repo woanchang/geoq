@@ -123,7 +123,7 @@ def add_workcell_comment(request, *args, **kwargs):
 """
 
 @login_required
-def savetweet2db(request, *args, **kwargs):
+def savetweet(request, *args, **kwargs):
     res = {}
     success = False
 
@@ -132,7 +132,8 @@ def savetweet2db(request, *args, **kwargs):
     tweet_data = request.POST['tweet_data']
 
     if tweet_data:
-        stored_tweet = StoredTweet(data=tweet_data, aoi=aoi, user=user)
+        tweet_data_json = json.loads(tweet_data)
+        stored_tweet = StoredTweet(data=tweet_data_json, aoi=aoi, user=user)
         stored_tweet.save()
         success = True
         print '\n\n\nTWEET HAS BEEN SAVED!\n\n\n'
