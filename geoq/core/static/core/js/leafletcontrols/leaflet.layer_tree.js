@@ -64,8 +64,12 @@ leaflet_layer_control.twitterStream = function($accordion) {
         .html('<button id="twitter-feed" type="button" ' +
                 'class="btn btn-primary btn-lg"> Start Stream </button>')
         .appendTo($content);
-        $("#twitter-feed").click( function() { twitterStream.toggleStream($(this)); } );
-
+    $("#twitter-feed").click( function() { twitterStream.toggleStream($(this)); } );
+    $("<div>")
+        .html('<button id="twitter-load" type="button" ' +
+                'class="btn btn-primary btn-lg"> Load Saved Tweets </button>')
+        .appendTo($content);
+    $("#twitter-load").click( function() { twitterStream.loadTweets(); } );
 }
 
 leaflet_layer_control.addPreferenceListener = function($accordion){

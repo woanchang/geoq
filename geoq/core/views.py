@@ -141,6 +141,16 @@ def savetweet(request, *args, **kwargs):
     res['tweet_saved'] = success
     return HttpResponse(json.dumps(res))
 
+def loadtweets(request, *args, **kwargs):
+    res = {}
+    success = False
+
+    tweets = StoredTweet.objects.filter(aoi=kwargs.get('pk'))
+    print '\n\n\nStored Tweets:\n', str(tweets), '\n\n\n'
+
+    res['tweets_loaded'] = success
+    return HttpResponse(json.dumps(res))
+
 
 class Dashboard(TemplateView):
 

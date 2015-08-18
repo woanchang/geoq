@@ -123,6 +123,7 @@
         twitterStream.stream_url = "{% url 'twitterfeed'%}";
         twitterStream.get_tweets_url = "{% url 'gettweets'%}";
         twitterStream.save_tweet_url = "{% url 'savetweet' object.id %}";
+        twitterStream.load_tweets_url = "{% url 'loadtweets' object.id %}";
 
         $(document).ready( function() {
 

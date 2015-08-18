@@ -151,8 +151,8 @@ twitterStream.getTweetsAjaxFunc = function() {
                 res.tweets = JSON.parse(res.tweets);
 
                 if ( res.tweets instanceof Array && res.tweets.length > 0) {
-                    twitterStream.tweets.push(res.tweets);
-                    twitterStream.addTweetLayer();
+                    //twitterStream.tweets.push(res.tweets);
+                    twitterStream.addTweetLayer(res.tweets);
                 }
             }
 
@@ -169,10 +169,11 @@ twitterStream.getTweetsAjaxFunc = function() {
     }); //ajax
 }
 
-twitterStream.addTweetLayer = function() {
+twitterStream.addTweetLayer = function(tweetArr) {
     var features = [];
 
-    for (var t of twitterStream.tweets[twitterStream.tweetIndex]) {
+    //for (var t of twitterStream.tweets[twitterStream.tweetIndex]) {
+    for (var t of tweetArr) {
 
         var dateStr = new Date(parseInt(t.timestamp_ms));
         var imageUrl = null;
@@ -284,6 +285,29 @@ twitterStream.saveTweet = function() {
     jQuery.ajax({
         traditional: true,
         type: "POST",
+        url: twitterStream.save_tweet_url,
+        data: {"tweet_data": $tweet.feature.properties.tweet_data},
+        dataType: "json",
+        success: function(res) {
+            console.log("save tweet response:", res);
+            if (res != undefined && res.tweet_saved) {
+                alert("Tweet has been saved successfully!");
+                twitterStream.tweetLayer.removeLayer($tweet);
+            }
+        },
+        error: function(e, msg) {
+            console.log(e.status + " - " + e.statusText + " [" + msg + "]");
+            console.log(e);
+        }
+    }); //ajax
+}
+
+twitterStream.loadTweets = function() {
+    console.log("Loading saved tweets...");
+    return;
+
+    jQuery.ajax({
+        type: "GET",
         url: twitterStream.save_tweet_url,
         data: {"tweet_data": $tweet.feature.properties.tweet_data},
         dataType: "json",

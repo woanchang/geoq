@@ -17,6 +17,7 @@ urlpatterns = patterns('',
     url(r'^twitterfeed', twitterfeed, name='twitterfeed'),
     url(r'^gettweets', gettweets, name='gettweets'),
     url(r'^savetweet/(?P<pk>\d+)?$', savetweet, name='savetweet'),
+    url(r'^loadtweets/(?P<pk>\d+)?$', loadtweets, name='loadtweets'),
 
     url(r'^$', Dashboard.as_view(), name='home'),
 
