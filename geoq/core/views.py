@@ -129,14 +129,14 @@ def savetweet(request, *args, **kwargs):
 
     aoi = get_object_or_404(AOI, id=kwargs.get('pk'))
     user = request.user
-    tweet_data = request.POST['tweet_data']
+    tweet_data = request.POST.get('tweet_data', None)
 
-    if tweet_data:
+    if tweet_data is not None:
         tweet_data_json = json.loads(tweet_data)
         stored_tweet = StoredTweet(data=tweet_data_json, aoi=aoi, user=user)
         stored_tweet.save()
         success = True
-        print '\n\n\nTWEET HAS BEEN SAVED!\n\n\n'
+        print '\nTweet has been saved!\n'
 
     res['tweet_saved'] = success
     return HttpResponse(json.dumps(res))

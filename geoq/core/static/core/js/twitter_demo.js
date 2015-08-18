@@ -275,39 +275,28 @@ twitterStream.removeTweet = function() {
 }
 
 twitterStream.saveTweet = function() {
-    console.log("save tweet...");
-
     $tweet = twitterStream.selectTweetLayer($(this));
     if ( $tweet == null || $tweet == undefined ) {
         console.log("error with save tweet");
         return;
     }
 
-    console.log("Tweet Data: ", $tweet.feature.properties.tweet_data);
-    tweet_data = $tweet.feature.properties.tweet_data;
-
-    console.log("gathered tweet data");
-
-    // defining success/error methods here to prevent ajax recursion error
-    var onSuccess = function(res) {
-        console.log("save tweet response:", res);
-    }
-    var onError = function(e, msg) {
-        console.log(e.status + " - " + e.statusText + " [" + msg + "]");
-        console.log(e);
-    }
-
     jQuery.ajax({
+        traditional: true,
         type: "POST",
-        async: true,
-        cache: false,
         url: twitterStream.save_tweet_url,
-        data: {tweet_data: tweet_data},
-        contentType: "application/json; charset=utf-8",
+        data: {"tweet_data": $tweet.feature.properties.tweet_data},
         dataType: "json",
-        success: onSuccess,
-        error: onError
+        success: function(res) {
+            console.log("save tweet response:", res);
+            if (res != undefined && res.tweet_saved) {
+                alert("Tweet has been saved successfully!");
+                twitterStream.tweetLayer.removeLayer($tweet);
+            }
+        },
+        error: function(e, msg) {
+            console.log(e.status + " - " + e.statusText + " [" + msg + "]");
+            console.log(e);
+        }
     }); //ajax
-
-    console.log("ajax request sent");
 }

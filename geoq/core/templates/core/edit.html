@@ -122,7 +122,7 @@
     <script type="text/javascript">
         twitterStream.stream_url = "{% url 'twitterfeed'%}";
         twitterStream.get_tweets_url = "{% url 'gettweets'%}";
-        twitterStream.save_tweet_url = "{% url 'savetweet'%}";
+        twitterStream.save_tweet_url = "{% url 'savetweet' object.id %}";
 
         $(document).ready( function() {
 
