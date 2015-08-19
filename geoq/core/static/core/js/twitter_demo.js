@@ -6,6 +6,7 @@ twitterStream.tweets = [];
 twitterStream.tweetFeatures = [];
 twitterStream.tweetIndex = 0;
 twitterStream.tweetLayer = undefined;
+twitterStream.loadedLayer = undefined;
 twitterStream.feature_id = 0;
 twitterStream.bad_hashtags = [];
 
@@ -302,20 +303,41 @@ twitterStream.saveTweet = function() {
     }); //ajax
 }
 
+//TODO: Add lazy load logic to this call
 twitterStream.loadTweets = function() {
     console.log("Loading saved tweets...");
-    return;
+
+    if ( twitterStream.loadedLayer == undefined ) {
+        twitterStream.loadedLayer = L.geoJson(false, {
+            onEachFeature: function(feature, layer) {
+                layer.bindPopup(feature.properties.popupContent);
+            },
+            // This filter is redundant, could be removed to improve efficiency
+            filter: function(feature, layer) {
+                return (feature.properties.lang === "en") &&
+                    (feature.geometry !== null);
+            },
+            pointToLayer: function(feature, latlng) {
+                var icon = L.icon({
+                    iconSize: [32, 32],
+                    iconAnchor: [13, 27],
+                    iconUrl: 'https://encrypted-tbn3.gstatic.com/images?q=tbn:'+
+                                'ANd9GcS-s7j2twXVBwmThHkxSMwfA9S0c_k8Ug7vdJPoneZ9f9DNKGJ3'
+                });
+
+                return L.marker(latlng, {icon: icon});
+            }
+        }).addTo(aoi_feature_edit.map);
+    }
 
     jQuery.ajax({
         type: "GET",
-        url: twitterStream.save_tweet_url,
-        data: {"tweet_data": $tweet.feature.properties.tweet_data},
+        url: twitterStream.load_tweets_url,
         dataType: "json",
         success: function(res) {
-            console.log("save tweet response:", res);
-            if (res != undefined && res.tweet_saved) {
-                alert("Tweet has been saved successfully!");
-                twitterStream.tweetLayer.removeLayer($tweet);
+            console.log("load tweet response:", res);
+            if ( res.tweets_loaded ) {
+                twitterStream.onLoadSuccess(res);
             }
         },
         error: function(e, msg) {
@@ -323,4 +345,83 @@ twitterStream.loadTweets = function() {
             console.log(e);
         }
     }); //ajax
+}
+
+twitterStream.onLoadSuccess = function(data) {
+    var features = [];
+    var tweet_data = JSON.parse(data.tweet_data);
+
+    if ( !(tweet_data instanceof Array) ) {
+        var temp = tweet_data;
+        tweet_data = [];
+        tweet_data.push(temp);
+    }
+
+    for ( tweet of tweet_data ) {
+        var t = tweet.tweet_data;
+        var dateStr = new Date(parseInt(t.timestamp_ms));
+        var savedDateStr = new Date(tweet.saved_at);
+        // Date parsing fix
+        if ( savedDateStr.getFullYear() < 2000 ) {
+            savedDateStr.setFullYear( (savedDateStr.getFullYear() - 1900) + 2000 );
+        }
+        savedDateStr = savedDateStr.toDateString() + ' at ' + savedDateStr.toLocaleTimeString();
+        var imageUrl = null;
+
+        // Add profile pic, twitter handler, and user's name to popup
+        var popupContent = '<div class="tweet-popup"><div class="tweet-popup-header">' +
+                        '<img src="' + t.user.profile_image_url_https + '"/>' +
+                        '<span><h5>@' + t.user.screen_name + '</h5><h6>(' + t.user.name + ')</h6></span></div>' +
+                        '<p>' + t.text + '</p><p>Posted today at ' + dateStr.toLocaleTimeString() + '</p>';
+
+        // Adds image, if one exists, to popup
+        if ( ("media" in t.entities) && (t.entities.media.length > 0) ) {
+            var media = t.entities.media[0];
+            if ( media.type !== "photo" ) {
+                return;
+            }
+            imageUrl = media.media_url_https;
+            var image = '<div class="tweet-img"><img style="width:125;height:125;" src="'+imageUrl+'"/>' +
+                        '<span><a href="#">Click to see full sized image</a></span></div>';
+            popupContent = popupContent + '<p>' + image + '</p>';
+        }
+
+        // Adds removal and irrelevant buttons to popup
+        /*popupContent += '<div data-id="' + twitterStream.feature_id + '"><a href="#" class="irrel-tweet">Flag ' +
+                        'as Irrelevant</a>&nbsp;|&nbsp;<a href="#" class="remove-tweet">Remove from Map</a>' +
+                        '&nbsp;|&nbsp;<a href="#" class="save-tweet">Save Tweet</a></div>';*/
+
+        // Adds additional saved tweet data
+        popupContent += '<p class="loaded-tweet">Saved ' + savedDateStr.substring(4) +
+        ' by <a href="#">' + tweet.user + '</a></p>';
+
+        // Closes wrapper div
+        popupContent += '</div>';
+
+        var feature_json = {
+            type: "Feature",
+            properties: {
+                id: twitterStream.feature_id++,
+                text: t.text,
+                source: 'Twitter',
+                image: imageUrl,
+                lang: t.lang,
+                username: t.user.name,
+                screen_name: t.user.screen_name,
+                profile_pic_url: t.user.profile_image_url_https,
+                twitter_verified: t.user.verified,
+                tweet_id: t.id,
+                timestamp: t.created_at,
+                popupContent: popupContent
+            },
+            // Note: coordinates field is GeoJson ready, the geo field isn't
+            // Even though they share the same data (for the most part)
+            geometry : t.coordinates
+        }
+
+        t.feature_json = feature_json;
+        features.push(feature_json);
+    }
+
+    twitterStream.loadedLayer.addData(features);
 }

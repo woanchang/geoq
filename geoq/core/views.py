@@ -141,12 +141,18 @@ def savetweet(request, *args, **kwargs):
     res['tweet_saved'] = success
     return HttpResponse(json.dumps(res))
 
+# TODO: add lazy load logic to this
 def loadtweets(request, *args, **kwargs):
     res = {}
     success = False
 
-    tweets = StoredTweet.objects.filter(aoi=kwargs.get('pk'))
-    print '\n\n\nStored Tweets:\n', str(tweets), '\n\n\n'
+    if StoredTweet.objects.filter(aoi=kwargs.get('pk')).count() > 0:
+        tweets = StoredTweet.objects.filter(aoi=kwargs.get('pk'))
+        tweet_list = []
+        for t in tweets:
+            tweet_list.append(t.to_dict())
+        res['tweet_data'] = json.dumps(tweet_list)
+        success = True
 
     res['tweets_loaded'] = success
     return HttpResponse(json.dumps(res))
