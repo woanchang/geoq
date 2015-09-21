@@ -34,15 +34,22 @@ from shape_view import *
 #Added by Jared
 import json
 from geoq.twitterstream.tasks import clearJson, openStream, twitter_close_key, twitter_active_key
+from geoq.twitterstream.models import StoredTweet
 from django.core.cache import cache
 
 def twitterfeed(request):
+    """
+    Toggles a stream on/off with Twitter's Streaming API asynchronously. Also saves current streaming state
+    (on/off = true/false) using cache. In the current version of Django, the cache will eventually expire,
+    which will cause the stream to stop. This function utilizes Celery tasks to make the stream async
+    """
 
     res = {}
     cache.add(twitter_active_key, False)
+    client_stream = request.GET['client-stream']
 
     # If a stream is currently open
-    if cache.get(twitter_active_key, False):
+    if (cache.get(twitter_active_key, False) is True) or (client_stream is True):
         cache.set(twitter_close_key, True)
         print 'Client stopped stream'
         print 'Close stream: ' + str(cache.get(twitter_close_key))
@@ -59,11 +66,36 @@ def twitterfeed(request):
     res['server_stream'] = True
 
     mapBounds = eval('[' + request.GET['bounds'] + ']')
+    # Celery task to asynchronously stream twitter
     openStream(mapBounds)
 
     return HttpResponse(json.dumps(res))
 
 def gettweets(request):
+
+    """
+    Main objective of this function is to read all tweets currently saved in the temp json file (stream.json)
+    and return them to the client. The 2nd goal is to collect 'bad hashtags' from the client and append them
+    to the 'blacklist' to be used as a filter for later. This function is called on an interval while the
+    stream is open (at least while the client thinks the stream is open)
+    """
+
+    # Get the hashtags to be added to the blacklist
+    # defaults to None if key doesn't exist
+    badHashtags = request.GET.get('bad-hashtags', None)
+
+    # Ensure 'bad-hashtags' key exists
+    if badHashtags is not None:
+        # Un-stringify array passed by ajax
+        badHashtags = json.loads(badHashtags)
+        # Adds the bad hashtags to the blacklist
+        with open('geoq/twitterstream/hashtag_blacklist.json', "r+") as f:
+            tempBlacklist = json.load(f)
+            # merges both lists while removing duplicates
+            mergedList = list(set(tempBlacklist + badHashtags))
+            f.seek(0)
+            json.dump(mergedList, f)
+            f.truncate()
 
     res = {}
     res['server_stream'] = cache.get(twitter_active_key, False)
@@ -74,6 +106,55 @@ def gettweets(request):
         f.write('[]')
         f.truncate()
 
+    return HttpResponse(json.dumps(res))
+
+"""
+@login_required
+def add_workcell_comment(request, *args, **kwargs):
+    aoi = get_object_or_404(AOI, id=kwargs.get('pk'))
+    user = request.user
+    comment_text = request.POST['comment']
+
+    if comment_text:
+        comment = Comment(user=user, aoi=aoi, text=comment_text)
+        comment.save()
+
+    return HttpResponse()
+"""
+
+@login_required
+def savetweet(request, *args, **kwargs):
+    res = {}
+    success = False
+
+    aoi = get_object_or_404(AOI, id=kwargs.get('pk'))
+    user = request.user
+    tweet_data = request.POST.get('tweet_data', None)
+
+    if tweet_data is not None:
+        tweet_data_json = json.loads(tweet_data)
+        stored_tweet = StoredTweet(data=tweet_data_json, aoi=aoi, user=user)
+        stored_tweet.save()
+        success = True
+        print '\nTweet has been saved!\n'
+
+    res['tweet_saved'] = success
+    return HttpResponse(json.dumps(res))
+
+# TODO: add lazy load logic to this
+def loadtweets(request, *args, **kwargs):
+    res = {}
+    success = False
+
+    if StoredTweet.objects.filter(aoi=kwargs.get('pk')).count() > 0:
+        tweets = StoredTweet.objects.filter(aoi=kwargs.get('pk'))
+        tweet_list = []
+        for t in tweets:
+            tweet_list.append(t.to_dict())
+        res['tweet_data'] = json.dumps(tweet_list)
+        success = True
+
+    res['tweets_loaded'] = success
     return HttpResponse(json.dumps(res))
 
 
