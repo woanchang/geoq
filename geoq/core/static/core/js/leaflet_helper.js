@@ -63,6 +63,23 @@ leaflet_helper.layer_conversion = function (lyr, map) {
     layerOptions = _.extend(options, layerParams);
     if (lyr.type == 'WMS') {
         outputLayer = new L.tileLayer.wms(lyr.url, layerOptions);
+    } else if (lyr.type == 'WFS') {
+
+        try {          
+            if (layerOptions.crs) {
+                var crs = layerOptions.crs.replace(/::/g, ':').split(':');
+                layerOptions.crs = eval('L.CRS.' + crs[crs.length - 2] + crs[crs.length - 1]);
+            }
+            else
+               layerOptions.crs = L.CRS.EPSG4326;
+
+            outputLayer = new L.WFS(layerOptions);
+            
+        }
+        catch (e) {
+            alert('Unable to create WFS layer: ' + e.toString());
+        }
+    
     } else if (lyr.type == 'WMTS') {
         // this seems a bit fussy, so will make sure we can create this without errors
         try {
@@ -84,8 +101,9 @@ leaflet_helper.layer_conversion = function (lyr, map) {
     } else if (lyr.type == 'ESRI Feature Layer' && esriPluginInstalled) {
         outputLayer = new L.esri.featureLayer(lyr.url, layerOptions);
         if (layerOptions.popupTemplate) {
-            outputLayer.bindPopup(function (feature, layerOptions) {
-                return L.Util.template(layerOptions.options.popupTemplate, feature.properties);
+            var template = layerOptions.popupTemplate;
+            outputLayer.bindPopup(function (feature) {
+                return L.Util.template(template, feature.properties);
             });
         }
     } else if (lyr.type == 'ESRI Clustered Feature Layer' && esriPluginInstalled) {
@@ -137,6 +155,10 @@ leaflet_helper.layer_conversion = function (lyr, map) {
         outputLayer = leaflet_helper.constructors.geojson(lyr, map);
     } else if (lyr.type == 'MediaQ') {
         outputLayer = new L.MediaQLayer(true, map, layerOptions);
+    } else if (lyr.type == 'WFS') {
+        outputLayer = new L.WFS(layerOptions);
+    } else if (lyr.type == 'ESRI Shapefile') {
+        outputLayer = new L.shapefile(lyr.url, layerOptions);
     }
 
     //Make sure the name is set for showing up in the layer menu
@@ -227,7 +249,7 @@ leaflet_helper.toWKT = function (layer) {
                 lng = latlngs[i].lng;
                 lat = latlngs[i].lat;
             }
-        }
+        } 
         if (layer instanceof L.Polygon) {
             return "POLYGON((" + coords.join(",") + "," + lng + " " + lat + "))";
         } else if (layer instanceof L.Polyline) {
@@ -238,4 +260,76 @@ leaflet_helper.toWKT = function (layer) {
     }
 };
 
+leaflet_helper.addLayerControl = function (map) {
+    var layers = _.filter(map_layers.layers, function (l) {
+        return l.type == "WMS" || l.type == "KML" || l.type == "ESRI Shapefile";
+    });
+
+    var overlayMaps = {
+    };
+
+    _.each(layers, function (layer) {
+        if (layer.displayInLayerSwitcher) {
+            if (layer.type == "WMS") {
+                var mywms = L.tileLayer.wms(layer.url, {
+                    layers: layer.layer,
+                    format: layer.format,
+                    transparent: layer.transparent,
+                    zIndex: layer.zIndex,
+                    attribution: layer.attribution
+                });
+                overlayMaps[layer.name] = mywms;
+            }
+            else if (layer.type == "KML") {
+                mykml = new L.KML(layer.url, {
+                    layers: layer.layer,
+                    format: layer.format,
+                    transparent: layer.transparent,
+                    attribution: layer.attribution
+                });
+                overlayMaps[layer.name] = mykml;
+            }
+            else if (layer.type == "ESRI Shapefile") {
+                var options = {};
+                if (layer.layerParams && layer.layerParams.style) {
+                    var style = layer.layerParams.style;
+                    options.style = function (feature) {
+                        return style;
+                    };
+                }
+                var labels;
+                if (layer.layerParams && layer.layerParams.label) {
+                    var labelstring = layer.layerParams.label;
+                    labels = L.layerGroup();
+                    options.onEachFeature = function(feature, layer) {
+                        var mlabel;
+                        try {
+                            mlabel = eval(labelstring);
+                        } catch (e) {
+                            mlabel = "Unknown";
+                        }
+                        var l = L.marker(layer.getBounds().getCenter(), {
+                            icon: L.divIcon({
+                                className: 'markerlabelClass',
+                                html: mlabel
+                            })
+                        });
+                        labels.addLayer(l);
+                    };
+                }
+                var myshape = L.shapefile(layer.url, options);
+                if (myshape) {
+                    if (labels) {
+                        myshape.addLayer(labels);
+                    }
+                    overlayMaps[layer.name] = myshape;
+                }
+            }
+        }
+    });
+
+    if (_.size(overlayMaps)) {
+        L.control.layers(null, overlayMaps).addTo(map);
+    }
+};
 
