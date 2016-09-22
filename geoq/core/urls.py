@@ -6,7 +6,7 @@ from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
 
 from django.views.generic import CreateView, TemplateView, ListView, UpdateView
-from forms import AOIForm, JobForm, ProjectForm, TeamForm# ExportJobForm
+from forms import AOIForm, JobForm, ProjectForm, TeamForm
 from models import AOI, Project, Job
 from proxies import proxy_to
 from views import *
@@ -43,25 +43,16 @@ urlpatterns = patterns('',
         name='job-metrics'),
 
     url(r'^jobs/(?P<pk>\d+)/next-aoi', redirect_to_unassigned_aoi, name='job-next-aoi'),
-
     url(r'^jobs/create/?$',
         login_required(CreateJobView.as_view(queryset=Job.objects.all(),
                            template_name='core/generic_form.html',
                            form_class=JobForm)),
         name='job-create'),
-
-    url(r'^jobs/export/(?P<pk>\d+)/?$',
-       login_required(ExportJobView.as_view(queryset=Job.objects.all(),
-                                            template_name='core/generic_form.html',
-                                            form_class=JobForm)),
-       name='job-export'),
-    
     url(r'^jobs/update/(?P<pk>\d+)/?$',
         login_required(UpdateJobView.as_view(queryset=Job.objects.all(),
                            template_name='core/generic_form.html',
                            form_class=JobForm)),
         name='job-update'),
-
     url(r'^jobs/delete/(?P<pk>\d+)/?$',
         login_required(JobDelete.as_view()),
         name='job-delete'),
@@ -78,8 +69,6 @@ urlpatterns = patterns('',
     url(r'^jobs/(?P<job_pk>\d+)/batch-create-aois/?$',
         #login required set in views
         'core.views.batch_create_aois', name='job-batch-create-aois'),
-
-    url(r'^jobs/statistics/(?P<job_pk>\d+)/?$', JobStatistics.as_view(), name='job-statistics'),
 
     # AOIS
     url(r'^aois/(?P<status>[a-zA-Z_ ]+)?/?$', AOIDetailedListView.as_view(template_name='core/aoi_list.html'), name='aoi-list'),

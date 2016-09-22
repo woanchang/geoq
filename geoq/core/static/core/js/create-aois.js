@@ -29,6 +29,7 @@ create_aois.highlightMode = 'delete';
 function mapInit(map) {
     //Auto-called after leaflet map is initialized
     create_aois.map_object = map;
+
     setTimeout(function () {
         var startingBounds = site_settings.map_starting_bounds || [
             [52.429222277955134, -51.50390625],
@@ -161,25 +162,20 @@ create_aois.init = function () {
         container: 'body'
     });
 
-    // only create geocompletion if we're able to load the appropriate javascript file
-    if (google && google.maps) {
-        $("#geocomplete").geocomplete()
-            .bind("geocode:result", function (event, result) {
-                create_aois.update_info("Geocode Result: " + result.formatted_address);
-                if (create_aois.map_object) {
-                    create_aois.map_object.setView([result.geometry.location.lat(), result.geometry.location.lng()], 13);
-                    create_aois.map_object.fire('zoomend');
-                }
-            })
-            .bind("geocode:error", function (event, status) {
-                create_aois.update_info("Geocode Error: " + status);
-            })
-            .bind("geocode:multiple", function (event, results) {
-                create_aois.update_info("Geocode Multiple: " + results.length + " results found");
-            });
-    } else {
-        $("#geocomplete").attr('disabled', true);
-    }
+    $("#geocomplete").geocomplete()
+        .bind("geocode:result", function (event, result) {
+            create_aois.update_info("Geocode Result: " + result.formatted_address);
+            if (create_aois.map_object) {
+                create_aois.map_object.setView([result.geometry.location.lat(), result.geometry.location.lng()], 13);
+                create_aois.map_object.fire('zoomend');
+            }
+        })
+        .bind("geocode:error", function (event, status) {
+            create_aois.update_info("Geocode Error: " + status);
+        })
+        .bind("geocode:multiple", function (event, results) {
+            create_aois.update_info("Geocode Multiple: " + results.length + " results found");
+        });
 
     $("#find").click(function () {
         $("#geocomplete").trigger("geocode");
@@ -306,7 +302,7 @@ create_aois.removeFeatures = function (e) {
 };
 
 create_aois.map_updates = function () {
-    var layers = _.filter(map_layers.layers, function (l) {
+    var layers = _.filter(map.layers, function (l) {
         return l.type == "WMS" || l.type == "KML";
     });
 
@@ -918,12 +914,10 @@ create_aois.highlightFeature = function (e) {
             }
         }
     }
-     //Commenting this out to replace $feature_info with popup
-    // if (layer.popupContent) {
-    //     create_aois.update_info(layer.popupContent);
-    // }
+    if (layer.popupContent) {
+        create_aois.update_info(layer.popupContent);
+    }
 };
-
 
 create_aois.update_info = function (html) {
     if (create_aois.$feature_info) {
@@ -942,8 +936,8 @@ create_aois.resetHighlight = function (e) {
             layer.setIcon(L.icon({iconUrl: layer.oldIcon}));
         }
     }
- //Commenting this out to replace $feature_info with popup
- //   create_aois.update_info("");
+
+    create_aois.update_info("");
 };
 
 create_aois.splitOrRemove = function (e) {
@@ -1013,7 +1007,6 @@ create_aois.createWorkCellsFromService = function (data, zoomAfter, skipFeatureS
             return create_aois.styleFromPriority(feature);
         },
         onEachFeature: function (feature, layer) {
-            
             var popupContent = "";
             if (!feature.properties) {
                 feature.properties = {};
@@ -1058,9 +1051,6 @@ create_aois.createWorkCellsFromService = function (data, zoomAfter, skipFeatureS
                 }
             }
             layer.popupContent = popupContent;
-
-            //TODO: Figure out why the layer does not have a map, causing openPopup to throw an error
-            // layer.bindPopup(layer.popupContent).openPopup();
 
             layer.on({
                 mouseover: create_aois.highlightFeature,
