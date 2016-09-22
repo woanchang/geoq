@@ -168,7 +168,6 @@ class Job(GeoQBase, Assignment):
     reviewers = models.ManyToManyField(User, blank=True, null=True, related_name="reviewers")
     progress = models.SmallIntegerField(max_length=2, blank=True, null=True)
     project = models.ForeignKey(Project, related_name="project")
-
     grid = models.CharField(max_length=5, choices=GRID_SERVICE_CHOICES, default=GRID_SERVICE_VALUES[0],
                             help_text='Select usng for Jobs inside the US, otherwise use mgrs')
     tags = models.CharField(max_length=50, blank=True, null=True, help_text='Useful tags to search social media with')
@@ -191,9 +190,6 @@ class Job(GeoQBase, Assignment):
     def get_update_url(self):
         return reverse('job-update', args=[self.id])
 
-    def get_export_url(self):
-        return reverse('job-export', args=[self.id])
-
     def aois_geometry(self):
         return self.aois.all().collect()
 
@@ -205,9 +201,6 @@ class Job(GeoQBase, Assignment):
 
     def aoi_count(self):
         return self.aois.count()
-
-    def aois(self):
-        return self.aois.all()
 
     @property
     def aoi_counts_html(self):
@@ -339,6 +332,7 @@ class Job(GeoQBase, Assignment):
 
         return obj
 
+
 class AOI(GeoQBase, Assignment):
     """
     Low-level organizational object. Now (6/1/14) referred to as a 'Workcell'
@@ -357,19 +351,6 @@ class AOI(GeoQBase, Assignment):
     polygon = models.MultiPolygonField()
     priority = models.SmallIntegerField(choices=PRIORITIES, max_length=1, default=5)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='Unassigned')
-
-    #Signifies When the work cell is created
-    cellCreated_at = models.DateTimeField(blank=True,null=True)
-    #signifies when the work cell enters the assigned state
-    cellAssigned_at = models.DateTimeField(blank=True,null=True)
-    #signifies when the work cell enters the "In Work " state
-    cellStarted_at = models.DateTimeField(blank=True,null=True)	
-    #Cell enters the waiting for review state
-    cellWaitingReview_at = models.DateTimeField(blank=True,null=True)
-    #cell enters QA
-    cellInReview_at = models.DateTimeField(blank=True,null=True)
-    #cell enters completed state
-    cellFinished_at = models.DateTimeField(blank=True,null=True)	
 
     class Meta:
         verbose_name = 'Area of Interest'
@@ -423,14 +404,7 @@ class AOI(GeoQBase, Assignment):
             analyst=(self.analyst.username if self.analyst is not None else 'None'),
             assignee=self.assignee_name,
             priority=self.priority,
-            delete_url=reverse('aoi-deleter', args=[self.id]),
-            time=dict(
-                assigned=str(self.cellAssigned_at), 
-                in_work=str(self.cellStarted_at),
-                waiting_review=str(self.cellWaitingReview_at),
-                in_review=str(self.cellInReview_at),
-                finished=str(self.cellFinished_at)
-                ))
+            delete_url=reverse('aoi-deleter', args=[self.id]))
         geojson["geometry"] = json.loads(self.polygon.json)
 
         geojson["properties"]["absolute_url"] = self.get_absolute_url()

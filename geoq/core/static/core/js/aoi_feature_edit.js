@@ -30,7 +30,6 @@ aoi_feature_edit.MapIcon = null;
 aoi_feature_edit.findMePoint = null;
 aoi_feature_edit.findMeCircle = null;
 aoi_feature_edit.showMyLocation = false;
-aoi_feature_edit.YouTube = null;
 
 aoi_feature_edit.init = function () {
     aoi_feature_edit.drawcontrol = null;
@@ -404,7 +403,8 @@ aoi_feature_edit.featureLayer_onEachFeature = function (feature, layer, featureL
         }
         if (feature.properties.updated_at){
             var datetime = feature.properties.updated_at;
-            datetime = datetime.replace("UTC",".000Z");
+            datetime = datetime.replace("T"," ");
+            datetime = datetime.replace("UTC"," UTC");
             var dtg = moment(datetime);
 
             if (dtg.isValid()){
@@ -612,7 +612,7 @@ aoi_feature_edit.map_init = function (map, bounds) {
     });
 
     // for some reason nginx isn't keeping MAX_ZOOM defined in settings.py. TODO: Figure out why
-    map.options.maxZoom = 18;
+    // map.options.maxZoom = 21;
 
     var custom_map = aoi_feature_edit.aoi_map_json || {};
     aoi_feature_edit.map = map;
@@ -761,7 +761,6 @@ aoi_feature_edit.map_init = function (map, bounds) {
             }
         });
 
-        var featureLayer = aoi_feature_edit.featureLayers[tnum];
         var featureType = aoi_feature_edit.feature_types[tnum];
 
         if (featureLayer && featureType) {
@@ -810,15 +809,6 @@ aoi_feature_edit.map_init = function (map, bounds) {
     var options = aoi_feature_edit.buildTreeLayers();
     leaflet_layer_control.addLayerControl(map, options, $accordion);
     leaflet_layer_control.addPreferenceListener($accordion);
-
-
-
-    //aoi_feature_edit.YouTube = L.layerGroup().addTo(map);
-    aoi_feature_edit.YouTube = L.markerClusterGroup({
-        spiderfyDistanceMultiplier: 2,
-        spiderLegPolylineOptions: { weight: 2, color: '#000', opacity: 1.0},
-    }).addTo(map);
-    
 
     function help_onclick() {
         window.open(aoi_feature_edit.help_url);

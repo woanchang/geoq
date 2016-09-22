@@ -7,7 +7,7 @@ from django.conf.urls import patterns, url
 from django.views.generic import CreateView, UpdateView, ListView
 from forms import FeatureTypeForm, MapForm, LayerForm, MapLayerForm
 from views import CreateFeatures, EditFeatures, create_update_map, FeatureTypeListView, FeatureTypeDelete, MapListView,\
- MapDelete, LayerListView, LayerDelete, LayerImport, KMZLayerImport, JSONLayerImport, JSONLayerExport, update_user_maplayer_param
+ MapDelete, LayerListView, LayerDelete, LayerImport, KMZLayerImport, update_user_maplayer_param
 from models import FeatureType, Map, Layer
 
 urlpatterns = patterns('',
@@ -79,7 +79,6 @@ urlpatterns = patterns('',
         LayerImport.as_view(),
         name='layer-import'),
 
-
     # MapLayer CRUD Views
 
     url(r'^map-layers/create/?$',
@@ -100,8 +99,4 @@ urlpatterns = patterns('',
 
     # other urls
     url(r'^api/map-layers[s ]?/create/create-kml-layer', KMZLayerImport.as_view(), name='create-kml-layer'),
-
-    url(r'^api/map-layers[s ]?/create/create-json-layer', JSONLayerImport.as_view(), name='create-json-layer'),
-
-    url(r'^api/map-layers[s ]?/(?P<pk>.+).json', JSONLayerExport.as_view(), name='json-layer-export'),
 )
