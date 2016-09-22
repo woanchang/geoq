@@ -353,9 +353,11 @@ class AOI(GeoQBase, Assignment):
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='Unassigned')
 
     class Meta:
+        verbose_name = 'Area of Interest'
+        verbose_name_plural = 'Areas of Interest'
         permissions = (
             ('assign_workcells', 'Assign Workcells'), ('certify_workcells', 'Certify Workcells'),
-        )
+        )        
 
     def __unicode__(self):
         aoi_obj = '%s - AOI %s' % (self.name, self.id)
@@ -460,10 +462,6 @@ class AOI(GeoQBase, Assignment):
         Returns whether the user can update the AOI as complete.
         """
         return user == self.analyst or user in self.job.reviewers.all()
-
-    class Meta:
-        verbose_name = 'Area of Interest'
-        verbose_name_plural = 'Areas of Interest'
 
 
 class Comment(models.Model):
