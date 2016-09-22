@@ -462,8 +462,8 @@ class AOI(GeoQBase, Assignment):
         Returns whether the user can update the AOI as complete.
         """
         return user == self.analyst or user in self.job.reviewers.all()
-
-
+    
+    
 class Comment(models.Model):
     """
     Track comments regarding work on a Workcell
