@@ -5,13 +5,12 @@ from django.test import TestCase
 from geoq.core.models import *
 
 class BaseTest(TestCase):
-    fixtures = ['initial_data.json']
     
     def setUp(self):
         comment_user = User.objects.get(id=4)
-        comment_aoi = AOI.objects.get(id=6508)
-        Comment.objects.create(user=comment_user, aoi=comment_aoi, text="Test Log")
-        Organization.objects.create(name="MITRE")
+        comment_aoi = AOI.objects.get(id=6508) #for testLog function
+        Comment.objects.create(user=comment_user, aoi=comment_aoi, text="Test Log") # for testLogJSON and testToDic functions
+        Organization.objects.create(name="MITRE", url="www.mitre.org")
     
 
 class ProjectTest(BaseTest):
@@ -20,13 +19,13 @@ class ProjectTest(BaseTest):
         """ -- Verify jobs function of project"""
         project = Project.objects.get(name="Hurricane Sandy")
         jobs = project.jobs
-        self.assertEqual(jobs.count(), 4)
+        self.assertEqual(jobs.count(), 3)
         
     def testJobCount(self):
         """  -- Verify job count of a project"""
         project = Project.objects.get(name="Hurricane Sandy")
         count = project.job_count
-        self.assertEqual(count, 4)
+        self.assertEqual(count, 3)
         
     def testUserCount(self):
         """  -- Verify user count of a project"""
@@ -38,13 +37,13 @@ class ProjectTest(BaseTest):
         """  -- Verify aois function of project"""
         project = Project.objects.get(name="Hurricane Sandy")
         aois = project.aois
-        self.assertEqual(aois.count(), 554)
+        self.assertEqual(aois.count(), 522)
         
     def testAoiCount(self):
         """  -- Verify AOI count of a project"""
         project = Project.objects.get(name="Hurricane Sandy")
         count = project.aoi_count
-        self.assertEqual(count, 554)
+        self.assertEqual(count, 522)
         
     #To Do
     def testAoisEnvelope(self):
@@ -91,10 +90,10 @@ class JobTest(BaseTest):
         self.assertEqual(url, addr)
         
     def testAoisGeometry(self):
-        """  -- Verify AOI GEOMETYCOLLECTION"""
+        """  -- Verify AOI GEOMETRYCOLLECTION"""
         job = Job.objects.get(name="Exploit CAP Imagery")
         aois = job.aois_geometry()
-        self.assertEqual(len(aois), 43)
+        self.assertEqual(len(aois), 47)
      
      #To Do   
     def testAoisEnvelope(self):
@@ -248,13 +247,12 @@ class AOITest(BaseTest):
         aoi = AOI.objects.get(id=6508)
         output = aoi.user_can_complete(aoi.analyst)
         self.assertTrue(output)
- #To Do   
+   
 class CommentTest(BaseTest):
     def testUnicode(self):
         """ -- Verify Comment user and AOI id returnd by __unicode__ function."""
-        comment_aoi = AOI.objects.get(id=6508)
-        comment = Comment.objects.get(aoi = comment_aoi)
-        self.assertEqual(unicode(comment), "Suzy-supervisor Comment on 6508")
+        comments = Comment.objects.all()
+        self.assertEqual(comments.count(), 17)
         
     def testToDict(self):
         """ -- VerifyComment ditionary."""
@@ -266,9 +264,12 @@ class CommentTest(BaseTest):
 class OrganizationTest(BaseTest):
     def testUnicode(self):
         """ -- Verify Comment user and AOI id returnd by __unicode__ function."""
-        organization = Organization.objects.all()
-        self.assertEqual(unicode(organization[0]), "MITRE")
-    
+        organizations = Organization.objects.all()
+        self.assertEqual(organizations.count(), 1)
+        self.assertEqual(unicode(organizations[0]), "MITRE")
+
+        
+        
 
 
     

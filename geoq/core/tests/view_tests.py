@@ -7,7 +7,7 @@ from geoq.core.views import *
 from geoq.core.forms import *
 
 class BaseTest(TestCase):
-    fixtures = ['initial_data.json']
+    #fixtures = ['geoq_core_test_data.json']
     
     def setUp(self):
         comment_user = User.objects.get(id=4)
@@ -23,9 +23,9 @@ class DashboardTest(BaseTest):
         count = response.context['count_users']
         self.assertEqual(count, 7, "Expected 7 users, found %s instead" % (count))
         count = response.context['count_jobs']
-        self.assertEqual(count, 4, "Expected 4 jobs, found %s instead" % (count))
+        self.assertEqual(count, 3, "Expected 3 jobs, found %s instead" % (count))
         count = response.context['count_workcells_total']
-        self.assertEqual(count, 554, "Expected 554 workcells, found %s instead" % (count))
+        self.assertEqual(count, 522, "Expected 522 workcells, found %s instead" % (count))
         count = response.context['count_training']
         self.assertEqual(count, 0, "Expected 0 trainings, found %s instead" % (count))
         projects = response.context['projects_private']
@@ -87,7 +87,7 @@ class TabbedJobListViewTest(BaseTest):
         count = len(response.context['exercise'])
         self.assertEqual(count, 0, "Expected 0 exercise job, found %s instead" % (count))
         count = len(response.context['active'])
-        self.assertEqual(count, 4, "Expected 1 active job, found %s instead" % (count))
+        self.assertEqual(count, 3, "Expected 3 active job, found %s instead" % (count))
         self.assertEqual(response.context['active_pane'], "active")
         
 class DetailedListViewTest(BaseTest):
@@ -99,7 +99,7 @@ class DetailedListViewTest(BaseTest):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'core/project_detail.html')
         count = len(response.context[8]['job_list'])      
-        self.assertEqual(count, 4)
+        self.assertEqual(count, 3, "Expected 3 jobs, found %s instead" % (count))
     
 #ToDo
 class CreateFeaturesViewTest(BaseTest):
@@ -120,7 +120,7 @@ class JobDetailedListViewTest(BaseTest):
         count = len(response.context['statuses'])
         self.assertEqual(count, 6, "Expected 6 statuses, found %s instead" % (count))
         self.assertEqual(response.context['active_status'], "active")
-        self.assertEqual(response.context['workcell_count'], 43)
+        self.assertEqual(response.context['workcell_count'], 47)
         self.assertEqual(response.context['metrics'], False)
         self.assertEqual(response.context['metrics_url'], "/geoq/jobs/metrics/1")
         self.assertEqual(response.context['completed'], 0.0)
