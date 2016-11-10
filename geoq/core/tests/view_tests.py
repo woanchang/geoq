@@ -45,7 +45,7 @@ class DashboardTest(BaseTest):
 class BatchCreateAOISTest(BaseTest):
         
     def testPost(self):
-        """ -- Verify the post method for BatchCreateAOIS page"""
+        """ -- Verify the Post method for BatchCreateAOIS page"""
         job = Job.objects.get(name='Jersey Shore Damage Assessment')
         aois = [{
             "properties": {
